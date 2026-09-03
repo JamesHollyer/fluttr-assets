@@ -130,4 +130,8 @@ def main():
     print("done. thumbnails: %d (%.1f MB); failed: %d %s" % (len(codes), total / 1e6, len(failed), failed[:20]), flush=True)
 
 if __name__ == "__main__":
-    main()
+    if "--map-only" in sys.argv:
+        # Regenerate the lookup table from the thumbnails on disk, no network needed.
+        print("map entries: %d" % len(write_map()))
+    else:
+        main()
