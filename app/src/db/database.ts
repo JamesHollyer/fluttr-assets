@@ -16,6 +16,17 @@ type PackSpecies = {
   sort: number;
   introduced: boolean;
   hawaii: boolean;
+  description?: string;
+  wikiUrl?: string | null;
+  image?: {
+    url: string;
+    width?: number | null;
+    height?: number | null;
+    artist?: string | null;
+    license?: string | null;
+    licenseUrl?: string | null;
+    page?: string | null;
+  };
 };
 
 /**
@@ -26,6 +37,8 @@ type PackSpecies = {
  * a sync target. Keep every write here safe to run repeatedly.
  */
 export async function migrateDbIfNeeded(db: SQLiteDatabase): Promise<void> {
+  // Wait for a lock instead of failing: a dev reload can reopen the database mid-seed.
+  await db.execAsync('PRAGMA busy_timeout = 5000;');
   await db.execAsync('PRAGMA journal_mode = WAL;');
   await db.execAsync('PRAGMA foreign_keys = ON;');
 
@@ -73,6 +86,22 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase): Promise<void> {
     await db.execAsync('PRAGMA user_version = 1;');
   }
 
+  if (version < 2) {
+    // Descriptions and photos from the species pack (Wikipedia / Wikimedia Commons).
+    await db.execAsync(`
+      ALTER TABLE species ADD COLUMN description       TEXT;
+      ALTER TABLE species ADD COLUMN wiki_url          TEXT;
+      ALTER TABLE species ADD COLUMN image_url         TEXT;
+      ALTER TABLE species ADD COLUMN image_width       INTEGER;
+      ALTER TABLE species ADD COLUMN image_height      INTEGER;
+      ALTER TABLE species ADD COLUMN image_artist      TEXT;
+      ALTER TABLE species ADD COLUMN image_license     TEXT;
+      ALTER TABLE species ADD COLUMN image_license_url TEXT;
+      ALTER TABLE species ADD COLUMN image_page        TEXT;
+    `);
+    await db.execAsync('PRAGMA user_version = 2;');
+  }
+
   await seedSpeciesPack(db);
 }
 
@@ -89,19 +118,30 @@ async function seedSpeciesPack(db: SQLiteDatabase): Promise<void> {
   await db.withExclusiveTransactionAsync(async (tx) => {
     const insert = await tx.prepareAsync(`
       INSERT INTO species
-        (code, common_name, scientific_name, family, family_common, order_name, sort_order, introduced, hawaii, pack_id)
+        (code, common_name, scientific_name, family, family_common, order_name, sort_order, introduced, hawaii, pack_id,
+         description, wiki_url, image_url, image_width, image_height, image_artist, image_license, image_license_url, image_page)
       VALUES
-        ($code, $common, $sci, $family, $familyCommon, $order, $sort, $introduced, $hawaii, $pack)
+        ($code, $common, $sci, $family, $familyCommon, $order, $sort, $introduced, $hawaii, $pack,
+         $description, $wikiUrl, $imageUrl, $imageWidth, $imageHeight, $imageArtist, $imageLicense, $imageLicenseUrl, $imagePage)
       ON CONFLICT (code) DO UPDATE SET
-        common_name     = excluded.common_name,
-        scientific_name = excluded.scientific_name,
-        family          = excluded.family,
-        family_common   = excluded.family_common,
-        order_name      = excluded.order_name,
-        sort_order      = excluded.sort_order,
-        introduced      = excluded.introduced,
-        hawaii          = excluded.hawaii,
-        pack_id         = excluded.pack_id
+        common_name       = excluded.common_name,
+        scientific_name   = excluded.scientific_name,
+        family            = excluded.family,
+        family_common     = excluded.family_common,
+        order_name        = excluded.order_name,
+        sort_order        = excluded.sort_order,
+        introduced        = excluded.introduced,
+        hawaii            = excluded.hawaii,
+        pack_id           = excluded.pack_id,
+        description       = excluded.description,
+        wiki_url          = excluded.wiki_url,
+        image_url         = excluded.image_url,
+        image_width       = excluded.image_width,
+        image_height      = excluded.image_height,
+        image_artist      = excluded.image_artist,
+        image_license     = excluded.image_license,
+        image_license_url = excluded.image_license_url,
+        image_page        = excluded.image_page
     `);
     try {
       for (const s of species) {
@@ -116,6 +156,15 @@ async function seedSpeciesPack(db: SQLiteDatabase): Promise<void> {
           $introduced: s.introduced ? 1 : 0,
           $hawaii: s.hawaii ? 1 : 0,
           $pack: pack.id,
+          $description: s.description ?? null,
+          $wikiUrl: s.wikiUrl ?? null,
+          $imageUrl: s.image?.url ?? null,
+          $imageWidth: s.image?.width ?? null,
+          $imageHeight: s.image?.height ?? null,
+          $imageArtist: s.image?.artist ?? null,
+          $imageLicense: s.image?.license ?? null,
+          $imageLicenseUrl: s.image?.licenseUrl ?? null,
+          $imagePage: s.image?.page ?? null,
         });
       }
     } finally {

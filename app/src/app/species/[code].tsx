@@ -1,10 +1,11 @@
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { EmptyState } from '@/components/empty-state';
+import { SpeciesPhoto } from '@/components/species-photo';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -59,6 +60,16 @@ export default function SpeciesDetailScreen() {
     <ThemedView style={styles.container}>
       <Stack.Screen options={{ title: species.commonName }} />
       <ScrollView contentContainerStyle={styles.content}>
+        <SpeciesPhoto
+          commonName={species.commonName}
+          imageUrl={species.imageUrl}
+          imageWidth={species.imageWidth}
+          imageHeight={species.imageHeight}
+          imageArtist={species.imageArtist}
+          imageLicense={species.imageLicense}
+          imagePage={species.imagePage}
+        />
+
         <View style={styles.hero}>
           <ThemedText type="subtitle" style={styles.title}>
             {species.commonName}
@@ -81,6 +92,25 @@ export default function SpeciesDetailScreen() {
           title={species.catchCount === 0 ? 'Catch it' : 'Catch it again'}
           onPress={() => router.push({ pathname: '/catch/[code]', params: { code } })}
         />
+
+        {species.description ? (
+          <View style={styles.section}>
+            <ThemedText type="smallBold" themeColor="textSecondary" style={styles.sectionLabel}>
+              ABOUT
+            </ThemedText>
+            <ThemedText style={styles.description}>{species.description}</ThemedText>
+            {species.wikiUrl ? (
+              <Pressable
+                accessibilityRole="link"
+                onPress={() => species.wikiUrl && Linking.openURL(species.wikiUrl)}
+                hitSlop={6}>
+                <ThemedText type="small" style={{ color: theme.accent }}>
+                  From Wikipedia (CC BY-SA)
+                </ThemedText>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
 
         <View style={styles.section}>
           <ThemedText type="smallBold" themeColor="textSecondary" style={styles.sectionLabel}>
@@ -150,6 +180,10 @@ const styles = StyleSheet.create({
   sectionLabel: {
     letterSpacing: 0.6,
     fontSize: 12,
+  },
+  description: {
+    fontWeight: 400,
+    lineHeight: 25,
   },
   sightingRow: {
     flexDirection: 'row',

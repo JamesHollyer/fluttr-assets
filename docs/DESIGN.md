@@ -1,6 +1,6 @@
 # Social Bird Watching App — Design Document
 
-**Status:** Draft v0.2 (2026-09-03)
+**Status:** Draft v0.3 (2026-09-03)
 **Name:** Fluttr (working title)
 **Platforms:** iOS, Android, Web
 
@@ -23,6 +23,11 @@ The pitch in one line: *Merlin's identification, Pokémon's collecting, Strava's
 - North America only at launch. Later, users choose which regions to download.
 - React Native + Expo over Flutter.
 - Wizard attribute accuracy: ship a working version first, improve the data once the app is playable.
+
+**2026-09-03 (later)**
+- Downloads are chosen by the user before heading out: a small required core pack, plus optional photo and sound packs per region, so people with little space can skip images.
+- New feature: **play bird sounds** (songs and calls) per species, offline from the sound pack, with an ethics reminder. Mirrors Merlin's playback.
+- Species descriptions and photos come from Wikipedia and Wikimedia Commons. For now the app stores image URLs and caches on view; images move into the photo pack when packs are built.
 
 ### Goals
 
@@ -79,7 +84,18 @@ For birds the user already knows: search by name → detail → Catch. Always av
 - Life list with filters (family, region, year, method of ID).
 - Profile shows species count, badge showcase, recent catches, streak.
 
-### 3.5 Friends
+### 3.5 Play sounds
+
+1. On a species page, tap a recording (song, call, etc.). It plays from the downloaded sound pack; if the pack is missing, the app streams it when online and offers the pack download.
+2. A short, dismissable reminder appears the first time playback is used: keep it brief, do not use playback near nesting birds, and follow local rules. Playback is disabled for species on the sensitive list.
+3. Recording credit (recordist, source, license) shows under the player.
+
+### 3.6 Download packs
+
+1. From Settings or a first-run prompt, the user picks a region and which components to download: **Core** (species, descriptions, likelihood, wizard attributes; small, required), **Photos**, and **Sounds**. Each shows its size.
+2. Packs download in the background and can be deleted individually. The app works fully offline with whatever is installed; anything missing degrades gracefully (a placeholder photo, a "download sounds" button).
+
+### 3.7 Friends
 
 - Add by username, QR code, or contacts (with explicit consent).
 - Friend request → accept model (mutual). No public follow in v1.
@@ -171,7 +187,16 @@ Rule types for v1: `distinct_species_count`, `sighting_count`, `streak_days`, `t
 
 **Anti-cheat:** the system is honor-based like most birding. Mitigations: badges for rare birds require an attached audio clip or photo; obviously impossible catches (species far outside range, 100 species in one minute) are flagged for soft review rather than blocked.
 
-### 4.5 Friends & Social
+### 4.5 Bird sounds playback
+
+Each species has a set of reference recordings tagged by type (song, call, alarm, flight call, juvenile). The species page lists them with a waveform-free, one-tap player; one plays at a time.
+
+- **Source:** Xeno-canto, filtered to good-quality (A/B) recordings, a handful per species, trimmed to about 20 seconds and normalized. Fetched by a build script with the Xeno-canto API (v3 requires a free key) and stored with recordist and license.
+- **Relationship to Sound ID:** none at runtime. The Perch model ships pre-trained; playback recordings are only for people to listen to. Later they double as an evaluation set for the classifier.
+- **Ethics:** ABA and eBird guidance discourages playback near nesting birds, for rare or sensitive species, and where it is prohibited. The app shows a one-time reminder, disables playback for sensitive-list species, and never auto-repeats a recording.
+- **Licensing:** most Xeno-canto recordings are CC BY-NC-SA or CC BY-NC-ND. Fine for a free app with attribution; revisit if monetizing (see §5).
+
+### 4.6 Friends & Social
 
 - **Friendship** is mutual: request → accept. Block and remove supported.
 - **Feed** is friends-only, reverse chronological, showing catches and badges. No algorithmic ranking in v1.
@@ -191,8 +216,9 @@ Rule types for v1: `distinct_species_count`, `sighting_count`, `streak_days`, `t
 | Sound model (alt) | BirdNET | CC BY-NC-SA 4.0. Non-commercial only; do not ship in a paid/ad-supported build without a license. |
 | Regional likelihood | GBIF occurrence data (includes a large eBird export), aggregated to region × month | Open licenses (CC0/CC BY per dataset); verify per dataset. Precompute offline into our own table; never call GBIF at runtime. |
 | Regional likelihood (alt) | eBird API 2.0 | Free for non-commercial; **commercial use requires written permission from Cornell**. Do not build the core product on it unless we secure that. |
-| Photos | Wikimedia Commons; iNaturalist (CC-licensed only) | Filter by license, store attribution with each image, display credit in the detail sheet. |
-| Reference sounds | Xeno-canto | Mostly CC BY-NC-SA; use only for in-app playback with attribution, not for redistribution. Revisit if monetizing. |
+| Descriptions | Wikipedia page summaries (via the REST summary API) | CC BY-SA 4.0. Show a "From Wikipedia" credit with a link. |
+| Photos | Wikimedia Commons lead image from each species' Wikipedia page (v1); iNaturalist CC photos later | Author and license fetched per image from Commons and stored; credit shown under the photo. Quality is uneven; curate later. |
+| Reference sounds | Xeno-canto (API v3, free key) | Mostly CC BY-NC-SA / BY-NC-ND. Playback with attribution inside the app, distributed only inside our sound packs. Revisit if monetizing. |
 | Species attributes (size/color/behavior) | Our own curated dataset | See §4.2. This is a build-it-ourselves item. |
 
 Licensing takeaway: **stay off the eBird API and BirdNET for core paths** so monetization stays an open option, and keep both the classifier and the likelihood data source behind interfaces so switching (for example to eBird data) is a configuration change. Every media asset carries an attribution string in the database.
@@ -250,13 +276,21 @@ flowchart LR
 - **Catch:** client POSTs a sighting; a DB trigger enqueues badge evaluation; the evaluator writes any new `user_badges` rows; Realtime pushes the result back so the celebration appears within a second.
 - **Feed:** a `feed_items` table is written on catch/badge events (fan-out on write), filtered by friendship on read. At v1 scale this is simpler than fan-out on read and easy to query.
 
-### 6.4 Offline behavior
+### 6.4 Offline behavior and download packs
 
-- Offline-first. Every core flow (Sound ID, wizard, manual catch, life list) works with no connection. The local database is the source of truth on device; the server is a sync target.
+- Offline-first. Every core flow (Sound ID, wizard, manual catch, life list, sound playback) works with no connection. The local database is the source of truth on device; the server is a sync target.
 - Catches, edits, and deletes queue locally and sync when online. Badge evaluation runs on the server after sync, with a local pre-check so the celebration can still show offline for simple rules.
-- Region packs (species, likelihood, attributes, images, model) are downloaded once and updated in the background. North America ships first.
+- **Packs** are per region and per component, chosen by the user:
 
----
+  | Component | Contents | Rough size (North America) |
+  |---|---|---|
+  | Core (required) | species list, descriptions, likelihood by month, wizard attributes, sensitive list | a few MB |
+  | Photos | one to three photos per species at phone resolution | 100–300 MB |
+  | Sounds | three to six trimmed recordings per species | 300–600 MB |
+  | Sound ID model | Perch converted for mobile | 50–150 MB |
+
+- A pack is a versioned zip with a manifest; the app downloads it to app storage, verifies a checksum, and records it in `installed_packs`. Updates are deltas by version. Packs are hosted as static files (object storage behind a CDN), no server code needed.
+- The current build predates packs: descriptions ship inside the app, and photos are URLs cached on first view. The screens read from the same tables either way, so moving to packs does not touch the UI.
 
 ## 7. Data Model
 
@@ -267,7 +301,8 @@ Core tables (Postgres). Row Level Security enforces that users only read friends
 - **species_attributes** — species_id, size_class[], colors[], behaviors[], variant (default/male/female/juvenile)
 - **species_likelihood** — species_id, region_id, month, frequency (0–1)
 - **regions** — id, name, level (country/state/grid cell), geometry
-- **species_media** — species_id, kind (photo/audio), url, attribution, license
+- **species_media** — species_id, kind (photo/audio), subtype (song/call/…), url or pack path, duration, attribution (author, source, license, license_url, page_url), quality
+- **installed_packs** — region_id, component (core/photos/sounds/model), version, size_bytes, installed_at
 - **sightings** — id, user_id, species_id, observed_at, location (geography, private), coarse_region_id, method, confidence, audio_url, photo_url, note, visibility
 - **badge_definitions** — id, series, tier, name, description, icon, rule (jsonb), revocable, active
 - **user_badges** — user_id, badge_id, earned_at, sighting_id (which catch triggered it)
@@ -298,6 +333,9 @@ Taxonomy import, regional likelihood table for North America from GBIF, first pa
 
 **Phase 1 — Catch & list (MVP core)**
 Auth, species browser, manual catch, wizard ID, life list, profile. Offline queue. This is a usable app on its own.
+
+**Phase 1b — Species pages and packs**
+Descriptions and photos on species pages (done, via Wikipedia URLs). Xeno-canto fetch script, sound playback on species pages, then the pack builder and the in-app download chooser.
 
 **Phase 2 — Sound ID**
 Runtime spike for Perch on mobile, then on-device classifier via a native module, spectrogram, likelihood prior from the region pack, catch from detection. Inference service for web and fallback.

@@ -8,6 +8,15 @@ export type Species = {
   familyCommon: string;
   order: string;
   introduced: number;
+  description: string | null;
+  wikiUrl: string | null;
+  imageUrl: string | null;
+  imageWidth: number | null;
+  imageHeight: number | null;
+  imageArtist: string | null;
+  imageLicense: string | null;
+  imageLicenseUrl: string | null;
+  imagePage: string | null;
 };
 
 export type SpeciesWithCount = Species & { catchCount: number };
@@ -20,6 +29,15 @@ const COLUMNS = `
   s.family_common   AS familyCommon,
   s.order_name      AS "order",
   s.introduced,
+  s.description,
+  s.wiki_url          AS wikiUrl,
+  s.image_url         AS imageUrl,
+  s.image_width       AS imageWidth,
+  s.image_height      AS imageHeight,
+  s.image_artist      AS imageArtist,
+  s.image_license     AS imageLicense,
+  s.image_license_url AS imageLicenseUrl,
+  s.image_page        AS imagePage,
   (SELECT COUNT(*) FROM sightings g WHERE g.species_code = s.code AND g.deleted_at IS NULL) AS catchCount
 `;
 
