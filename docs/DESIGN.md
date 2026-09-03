@@ -1,7 +1,7 @@
 # Social Bird Watching App — Design Document
 
 **Status:** Draft v0.2 (2026-09-03)
-**Name:** Flutter (working title; Google holds a software trademark on the Flutter framework, so revisit before store submission)
+**Name:** Fluttr (working title)
 **Platforms:** iOS, Android, Web
 
 ---
@@ -15,13 +15,13 @@ The pitch in one line: *Merlin's identification, Pokémon's collecting, Strava's
 ### Decisions log
 
 **2026-09-03**
-- Name: Flutter (working title).
+- Name: Fluttr (working title). "Flutter" was considered and dropped because Google holds a software trademark on the Flutter framework.
 - Offline-first is a must-have. On-device Sound ID and offline catching are core to v1, not roadmap items, because most birding happens without service.
 - Keep the sound model (Perch) and the likelihood data source (GBIF now, eBird as an alternative) behind interfaces so each can be swapped.
 - Monetization is deferred. The licensing choices in §5 keep it open without deciding it.
 - Web is a secondary platform for Sound ID.
 - North America only at launch. Later, users choose which regions to download.
-- React Native + Expo over the Flutter framework.
+- React Native + Expo over Flutter.
 - Wizard attribute accuracy: ship a working version first, improve the data once the app is playable.
 
 ### Goals
@@ -318,9 +318,8 @@ Photo ID; hotspots map; monthly challenges; "birds near you now"; eBird export; 
 
 ## 10. Open Questions
 
-1. **App name.** "Flutter" collides with Google's framework and its software trademark. Fine as a working title; revisit before store submission.
-2. **Mobile runtime for Perch.** TFLite, ExecuTorch, or ONNX Runtime, and whether Perch's size and latency are acceptable on mid-range Android. A spike should answer this before Phase 2 UI work.
-3. **Bundle identifiers.** A reverse-domain id (for example `com.<yourdomain>.flutter`) is needed before native builds are shared.
+1. **Mobile runtime for Perch.** TFLite, ExecuTorch, or ONNX Runtime, and whether Perch's size and latency are acceptable on mid-range Android. A spike should answer this before Phase 2 UI work.
+3. **Bundle identifiers.** A reverse-domain id (for example `com.<yourdomain>.fluttr`) is needed before native builds are shared.
 4. **Region pack size.** Images dominate. Decide a per-region budget and image resolution.
 
 ---

@@ -1,0 +1,165 @@
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useSQLiteContext } from 'expo-sqlite';
+import { useCallback, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+
+import { Button } from '@/components/button';
+import { EmptyState } from '@/components/empty-state';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { deleteSighting, listSightingsForSpecies, type Sighting } from '@/db/sightings';
+import { getSpecies, type SpeciesWithCount } from '@/db/species';
+import { confirmAsync } from '@/lib/confirm';
+import { formatDateTime } from '@/lib/format';
+import { useTheme } from '@/hooks/use-theme';
+
+export default function SpeciesDetailScreen() {
+  const { code } = useLocalSearchParams<{ code: string }>();
+  const db = useSQLiteContext();
+  const router = useRouter();
+  const theme = useTheme();
+  const [species, setSpecies] = useState<SpeciesWithCount | null>(null);
+  const [sightings, setSightings] = useState<Sighting[]>([]);
+
+  const load = useCallback(async () => {
+    const [s, list] = await Promise.all([getSpecies(db, code), listSightingsForSpecies(db, code)]);
+    setSpecies(s);
+    setSightings(list);
+  }, [db, code]);
+
+  useFocusEffect(
+    useCallback(() => {
+      load().catch(console.error);
+    }, [load]),
+  );
+
+  async function onRemove(sighting: Sighting) {
+    const ok = await confirmAsync(
+      'Remove this catch?',
+      `${species?.commonName ?? 'This bird'} on ${formatDateTime(sighting.observedAt)} will be removed from your life list.`,
+    );
+    if (!ok) return;
+    await deleteSighting(db, sighting.id);
+    await load();
+  }
+
+  if (!species) {
+    return (
+      <ThemedView style={styles.container}>
+        <Stack.Screen options={{ title: '' }} />
+        <EmptyState title="Species not found" />
+      </ThemedView>
+    );
+  }
+
+  const tags = [species.familyCommon, species.order, species.introduced ? 'Introduced' : null].filter(Boolean);
+
+  return (
+    <ThemedView style={styles.container}>
+      <Stack.Screen options={{ title: species.commonName }} />
+      <ScrollView contentContainerStyle={styles.content}>
+        <View style={styles.hero}>
+          <ThemedText type="subtitle" style={styles.title}>
+            {species.commonName}
+          </ThemedText>
+          <ThemedText themeColor="textSecondary" style={styles.sci}>
+            {species.scientificName}
+          </ThemedText>
+          <View style={styles.tags}>
+            {tags.map((tag) => (
+              <View key={tag} style={[styles.tag, { backgroundColor: theme.backgroundElement }]}>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {tag}
+                </ThemedText>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        <Button
+          title={species.catchCount === 0 ? 'Catch it' : 'Catch it again'}
+          onPress={() => router.push({ pathname: '/catch/[code]', params: { code } })}
+        />
+
+        <View style={styles.section}>
+          <ThemedText type="smallBold" themeColor="textSecondary" style={styles.sectionLabel}>
+            {sightings.length === 0
+              ? 'NOT CAUGHT YET'
+              : `YOUR CATCHES · ${sightings.length}`}
+          </ThemedText>
+          {sightings.map((s) => (
+            <View key={s.id} style={[styles.sightingRow, { borderBottomColor: theme.border }]}>
+              <View style={styles.sightingText}>
+                <ThemedText>{formatDateTime(s.observedAt)}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {[s.lat != null ? 'Location saved' : 'No location', s.note].filter(Boolean).join(' · ')}
+                </ThemedText>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Remove catch"
+                hitSlop={8}
+                onPress={() => onRemove(s).catch(console.error)}>
+                <ThemedText type="small" style={{ color: theme.danger }}>
+                  Remove
+                </ThemedText>
+              </Pressable>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+    </ThemedView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  content: {
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    padding: Spacing.four,
+    gap: Spacing.four,
+  },
+  hero: {
+    gap: Spacing.one,
+  },
+  title: {
+    lineHeight: 38,
+  },
+  sci: {
+    fontStyle: 'italic',
+  },
+  tags: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+    marginTop: Spacing.two,
+  },
+  tag: {
+    paddingVertical: Spacing.one,
+    paddingHorizontal: Spacing.two + 2,
+    borderRadius: Spacing.two,
+  },
+  section: {
+    gap: Spacing.two,
+  },
+  sectionLabel: {
+    letterSpacing: 0.6,
+    fontSize: 12,
+  },
+  sightingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    paddingVertical: Spacing.two + 2,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  sightingText: {
+    flex: 1,
+    gap: 1,
+  },
+});
