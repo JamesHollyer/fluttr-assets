@@ -122,7 +122,8 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase): Promise<void> {
 }
 
 async function seedSpeciesPack(db: SQLiteDatabase): Promise<void> {
-  const stamp = `${pack.id}:${pack.version}`;
+  // Any rebuild of the pack reseeds, not just a version bump.
+  const stamp = `${pack.id}:${pack.version}:${pack.generated}`;
   const current = await db.getFirstAsync<{ value: string }>(
     'SELECT value FROM meta WHERE key = ?',
     SPECIES_PACK_KEY,

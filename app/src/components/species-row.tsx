@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
+import { SpeciesThumb } from '@/components/species-thumb';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -23,7 +24,7 @@ export function SpeciesRow({ code, commonName, scientificName, detail, catchCoun
       accessibilityRole="button"
       onPress={() => router.push({ pathname: '/species/[code]', params: { code } })}
       style={({ pressed }) => [styles.row, { borderBottomColor: theme.border }, pressed && styles.pressed]}>
-      <View style={[styles.marker, { backgroundColor: caught ? theme.highlight : theme.backgroundSelected }]} />
+      <SpeciesThumb code={code} caught={caught} />
       <View style={styles.text}>
         <ThemedText numberOfLines={1}>{commonName}</ThemedText>
         <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
@@ -48,17 +49,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
-    paddingVertical: Spacing.two + 4,
+    paddingVertical: Spacing.two + 2,
     paddingHorizontal: Spacing.four,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   pressed: {
     opacity: 0.6,
-  },
-  marker: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
   },
   text: {
     flex: 1,

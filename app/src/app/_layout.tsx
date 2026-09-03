@@ -44,6 +44,7 @@ export default function RootLayout() {
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="species/[code]" options={{ title: '', headerBackButtonDisplayMode: 'minimal' }} />
             <Stack.Screen name="catch/[code]" options={{ title: 'Catch', presentation: 'modal' }} />
+            <Stack.Screen name="credits" options={{ title: 'Credits' }} />
           </Stack>
         </SQLiteProvider>
       </Suspense>

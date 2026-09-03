@@ -78,3 +78,20 @@ export async function searchSpecies(db: SQLiteDatabase, query: string): Promise<
 export async function getSpecies(db: SQLiteDatabase, code: string): Promise<SpeciesWithCount | null> {
   return db.getFirstAsync<SpeciesWithCount>(`SELECT ${COLUMNS} FROM species s WHERE s.code = ?`, code);
 }
+
+export type PhotoCredit = {
+  code: string;
+  commonName: string;
+  imageArtist: string | null;
+  imageLicense: string | null;
+  imagePage: string | null;
+};
+
+export async function listPhotoCredits(db: SQLiteDatabase): Promise<PhotoCredit[]> {
+  return db.getAllAsync<PhotoCredit>(
+    `SELECT code, common_name AS commonName, image_artist AS imageArtist,
+            image_license AS imageLicense, image_page AS imagePage
+     FROM species WHERE image_url IS NOT NULL
+     ORDER BY common_name`,
+  );
+}

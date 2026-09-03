@@ -1,18 +1,22 @@
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, StyleSheet } from 'react-native';
+import { FlatList, Pressable, StyleSheet } from 'react-native';
 
 import { EmptyState } from '@/components/empty-state';
 import { ScreenHeader } from '@/components/screen-header';
 import { SearchField } from '@/components/search-field';
 import { SpeciesRow } from '@/components/species-row';
+import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { searchSpecies, type SpeciesWithCount } from '@/db/species';
+import { useTheme } from '@/hooks/use-theme';
 
 export default function SpeciesScreen() {
   const db = useSQLiteContext();
+  const router = useRouter();
+  const theme = useTheme();
   const [query, setQuery] = useState('');
   const [items, setItems] = useState<SpeciesWithCount[]>([]);
   const requestId = useRef(0);
@@ -60,6 +64,16 @@ export default function SpeciesScreen() {
         ListEmptyComponent={
           <EmptyState title="No species match" hint="Try a shorter name, or the family, like “warbler”." />
         }
+        ListFooterComponent={
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => router.push('/credits')}
+            style={styles.footer}>
+            <ThemedText type="small" style={{ color: theme.accent }}>
+              Photo and data credits
+            </ThemedText>
+          </Pressable>
+        }
         renderItem={({ item }) => (
           <SpeciesRow
             code={item.code}
@@ -86,5 +100,10 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MaxContentWidth,
     paddingBottom: BottomTabInset + Spacing.four,
+  },
+  footer: {
+    paddingHorizontal: Spacing.four,
+    paddingVertical: Spacing.four,
+    alignItems: 'center',
   },
 });

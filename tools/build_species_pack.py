@@ -8,7 +8,7 @@ Inputs (downloaded separately, see README in this folder):
 Output:
   app/assets/data/species-na.json
 """
-import csv, json, sys, pathlib
+import csv, json, re, sys, pathlib
 
 src = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else pathlib.Path(".")
 out = pathlib.Path(__file__).resolve().parent.parent / "app/assets/data/species-na.json"
@@ -77,8 +77,10 @@ if wiki_path.exists():
             s["description"] = info["description"]
             s["wikiUrl"] = info.get("wikiUrl")
             with_desc += 1
-        if info.get("image"):
-            s["image"] = info["image"]
+        img = info.get("image")
+        # Some species have no photo, and Wikipedia's lead image is a range map. Skip those.
+        if img and not re.search(r"(_map\b|map\.svg|_dist\b|distribution|range_map)", img["url"].split("?")[0], re.I):
+            s["image"] = img
             with_img += 1
 
 # Wizard attributes (build_attributes.py) and regional likelihood (fetch_gbif_likelihood.py).
@@ -97,7 +99,9 @@ for s in species:
         s["freq"] = {"usca": g["usca"], "months": g["months"]}
         with_freq += 1
 
+import datetime
 pack = {"id": "na", "name": "North & Middle America", "version": 3,
+        "generated": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "sources": ["eBird/Clements taxonomy (Cornell Lab of Ornithology)", "AOS NACC checklist (American Ornithological Society)",
                     "Descriptions: Wikipedia (CC BY-SA 4.0)", "Photos: Wikimedia Commons (per-image license)",
                     "Likelihood: GBIF occurrence counts, US and Canada (open data)"],
