@@ -46,6 +46,22 @@ with open(src / "nacc.csv", newline="", encoding="utf-8") as f:
             "hawaii": bool(r["status_hawaiian"]),
         })
 
+# Force-include recent eBird splits the checklist does not list separately.
+extra_path = pathlib.Path(__file__).resolve().parent / "data/extra-species.json"
+if extra_path.exists():
+    have = {s["code"] for s in species}
+    by_code = {r["SPECIES_CODE"]: r for r in ebird.values()}
+    for code in json.loads(extra_path.read_text())["codes"]:
+        e = by_code.get(code)
+        if e and code not in have:
+            species.append({
+                "code": e["SPECIES_CODE"], "common": e["COMMON_NAME"], "sci": e["SCIENTIFIC_NAME"],
+                "family": e["FAMILY_SCI_NAME"], "familyCommon": e["FAMILY_COM_NAME"], "order": e["ORDER"],
+                "sort": float(e["TAXON_ORDER"]), "introduced": False, "hawaii": False,
+            })
+        elif not e:
+            print("WARNING: extra species code not in eBird taxonomy:", code)
+
 species.sort(key=lambda s: s["sort"])
 
 # Merge Wikipedia descriptions and Commons images when the fetch has been run.
@@ -65,12 +81,29 @@ if wiki_path.exists():
             s["image"] = info["image"]
             with_img += 1
 
-pack = {"id": "na", "name": "North & Middle America", "version": 2,
+# Wizard attributes (build_attributes.py) and regional likelihood (fetch_gbif_likelihood.py).
+attr_path = pathlib.Path(__file__).resolve().parent / "data/attributes.json"
+gbif_path = pathlib.Path(__file__).resolve().parent / "data/gbif-likelihood.json"
+with_attr = with_freq = 0
+attrs = json.loads(attr_path.read_text()) if attr_path.exists() else {}
+gbif = json.loads(gbif_path.read_text()) if gbif_path.exists() else {}
+for s in species:
+    a = attrs.get(s["code"])
+    if a:
+        s["sizes"], s["colors"], s["behaviors"] = a["sizes"], a["colors"], a["behaviors"]
+        with_attr += 1
+    g = gbif.get(s["code"])
+    if g:
+        s["freq"] = {"usca": g["usca"], "months": g["months"]}
+        with_freq += 1
+
+pack = {"id": "na", "name": "North & Middle America", "version": 3,
         "sources": ["eBird/Clements taxonomy (Cornell Lab of Ornithology)", "AOS NACC checklist (American Ornithological Society)",
-                    "Descriptions: Wikipedia (CC BY-SA 4.0)", "Photos: Wikimedia Commons (per-image license)"],
+                    "Descriptions: Wikipedia (CC BY-SA 4.0)", "Photos: Wikimedia Commons (per-image license)",
+                    "Likelihood: GBIF occurrence counts, US and Canada (open data)"],
         "species": species}
 out.parent.mkdir(parents=True, exist_ok=True)
 out.write_text(json.dumps(pack, separators=(",", ":"), ensure_ascii=False))
-print(f"wrote {len(species)} species to {out} ({out.stat().st_size//1024} KB); skipped {skipped} accidental/extinct; unmatched {len(unmatched)}; descriptions {with_desc}; images {with_img}")
+print(f"wrote {len(species)} species to {out} ({out.stat().st_size//1024} KB); skipped {skipped} accidental/extinct; unmatched {len(unmatched)}; descriptions {with_desc}; images {with_img}; attributes {with_attr}; likelihood {with_freq}")
 for u in unmatched[:40]:
     print("  unmatched:", u)

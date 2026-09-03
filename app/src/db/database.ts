@@ -18,6 +18,10 @@ type PackSpecies = {
   hawaii: boolean;
   description?: string;
   wikiUrl?: string | null;
+  sizes?: number[];
+  colors?: string[];
+  behaviors?: string[];
+  freq?: { usca: number; months: number[] };
   image?: {
     url: string;
     width?: number | null;
@@ -102,6 +106,18 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase): Promise<void> {
     await db.execAsync('PRAGMA user_version = 2;');
   }
 
+  if (version < 3) {
+    // Wizard attributes and regional likelihood from the species pack.
+    await db.execAsync(`
+      ALTER TABLE species ADD COLUMN size_classes TEXT;
+      ALTER TABLE species ADD COLUMN colors       TEXT;
+      ALTER TABLE species ADD COLUMN behaviors    TEXT;
+      ALTER TABLE species ADD COLUMN freq_usca    INTEGER;
+      ALTER TABLE species ADD COLUMN freq_months  TEXT;
+    `);
+    await db.execAsync('PRAGMA user_version = 3;');
+  }
+
   await seedSpeciesPack(db);
 }
 
@@ -119,10 +135,12 @@ async function seedSpeciesPack(db: SQLiteDatabase): Promise<void> {
     const insert = await tx.prepareAsync(`
       INSERT INTO species
         (code, common_name, scientific_name, family, family_common, order_name, sort_order, introduced, hawaii, pack_id,
-         description, wiki_url, image_url, image_width, image_height, image_artist, image_license, image_license_url, image_page)
+         description, wiki_url, image_url, image_width, image_height, image_artist, image_license, image_license_url, image_page,
+         size_classes, colors, behaviors, freq_usca, freq_months)
       VALUES
         ($code, $common, $sci, $family, $familyCommon, $order, $sort, $introduced, $hawaii, $pack,
-         $description, $wikiUrl, $imageUrl, $imageWidth, $imageHeight, $imageArtist, $imageLicense, $imageLicenseUrl, $imagePage)
+         $description, $wikiUrl, $imageUrl, $imageWidth, $imageHeight, $imageArtist, $imageLicense, $imageLicenseUrl, $imagePage,
+         $sizes, $colors, $behaviors, $freqUsca, $freqMonths)
       ON CONFLICT (code) DO UPDATE SET
         common_name       = excluded.common_name,
         scientific_name   = excluded.scientific_name,
@@ -141,7 +159,12 @@ async function seedSpeciesPack(db: SQLiteDatabase): Promise<void> {
         image_artist      = excluded.image_artist,
         image_license     = excluded.image_license,
         image_license_url = excluded.image_license_url,
-        image_page        = excluded.image_page
+        image_page        = excluded.image_page,
+        size_classes      = excluded.size_classes,
+        colors            = excluded.colors,
+        behaviors         = excluded.behaviors,
+        freq_usca         = excluded.freq_usca,
+        freq_months       = excluded.freq_months
     `);
     try {
       for (const s of species) {
@@ -165,6 +188,11 @@ async function seedSpeciesPack(db: SQLiteDatabase): Promise<void> {
           $imageLicense: s.image?.license ?? null,
           $imageLicenseUrl: s.image?.licenseUrl ?? null,
           $imagePage: s.image?.page ?? null,
+          $sizes: s.sizes?.join(',') ?? null,
+          $colors: s.colors?.join(',') ?? null,
+          $behaviors: s.behaviors?.join(',') ?? null,
+          $freqUsca: s.freq?.usca ?? null,
+          $freqMonths: s.freq?.months?.join(',') ?? null,
         });
       }
     } finally {

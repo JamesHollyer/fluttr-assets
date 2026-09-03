@@ -20,6 +20,14 @@ export default function AppTabs() {
         />
       </NativeTabs.Trigger>
 
+      <NativeTabs.Trigger name="identify">
+        <NativeTabs.Trigger.Label>Identify</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon
+          src={require('@/assets/images/tabIcons/explore.png')}
+          renderingMode="template"
+        />
+      </NativeTabs.Trigger>
+
       <NativeTabs.Trigger name="life-list">
         <NativeTabs.Trigger.Label>Life list</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon

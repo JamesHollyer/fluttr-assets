@@ -1,6 +1,6 @@
 # Social Bird Watching App — Design Document
 
-**Status:** Draft v0.3 (2026-09-03)
+**Status:** Draft v0.4 (2026-09-03)
 **Name:** Fluttr (working title)
 **Platforms:** iOS, Android, Web
 
@@ -28,6 +28,8 @@ The pitch in one line: *Merlin's identification, Pokémon's collecting, Strava's
 - Downloads are chosen by the user before heading out: a small required core pack, plus optional photo and sound packs per region, so people with little space can skip images.
 - New feature: **play bird sounds** (songs and calls) per species, offline from the sound pack, with an ethics reminder. Mirrors Merlin's playback.
 - Species descriptions and photos come from Wikipedia and Wikimedia Commons. For now the app stores image URLs and caches on view; images move into the photo pack when packs are built.
+- Regional likelihood comes from GBIF occurrence counts (US and Canada, by month) rather than eBird, which needs permission, or the ABA checklist, whose download is currently an empty file.
+- Wizard attributes are built from a hand-curated family and genus table, colors mined from names and Wikipedia text, and a hand-checked override list for about 230 common species. Improve by editing the override file.
 
 ### Goals
 
@@ -143,7 +145,11 @@ For birds the user already knows: search by name → detail → Catch. Always av
 
 **Ranking:** hard-filter on size and behavior (with tolerance for adjacent size classes), soft-score on colors (fraction of user-picked colors present in the species' tags), multiply by regional likelihood for that month. Show the top 15 with "show more."
 
-**Attribute source:** No fully open dataset exists with exactly these tags. Plan: seed ~600 North American species with attributes generated from field-guide descriptions and Wikipedia text (LLM-assisted), stored as versioned JSON so corrections ship as content updates. Ship a first version and improve accuracy once the app is playable.
+**Attribute source (implemented):** No open dataset has these tags, so the pack builder makes them in three layers: a hand-curated table of size classes, behaviors, and fallback colors per family with genus overrides (`tools/data/family-attributes.json`); colors mined from the common name and the Wikipedia description; and a hand-checked override file for about 230 common species (`tools/data/attribute-overrides.json`). Corrections are edits to those two files followed by a pack rebuild.
+
+**Likelihood source (implemented):** GBIF occurrence counts for the US and Canada per species, split by month (`tools/fetch_gbif_likelihood.py`). GBIF includes the eBird observation dataset, so the counts track how often birders report each species. Species with under 200 records are treated as absent from the region. Mexico, Central America, and the Caribbean have no ranking yet.
+
+**Ranking (implemented):** size is a hard filter with the neighbouring class allowed at a discount; colors score by the fraction of the picked colors the bird shows; behavior is a soft factor; regional frequency is squared on a log scale so common birds pull clear; the month share nudges residents and penalises birds essentially absent that month.
 
 ### 4.3 Catching & Life List
 
@@ -214,12 +220,12 @@ Each species has a set of reference recordings tagged by type (song, call, alarm
 | Taxonomy | eBird/Clements checklist (annual CSV) | Free download; attribution required. Use eBird 6-letter codes as species keys for interoperability. |
 | Sound model | Google Perch | Apache 2.0. Safe for commercial use. |
 | Sound model (alt) | BirdNET | CC BY-NC-SA 4.0. Non-commercial only; do not ship in a paid/ad-supported build without a license. |
-| Regional likelihood | GBIF occurrence data (includes a large eBird export), aggregated to region × month | Open licenses (CC0/CC BY per dataset); verify per dataset. Precompute offline into our own table; never call GBIF at runtime. |
+| Regional likelihood | GBIF occurrence API: record counts per species for US + CA, faceted by month (implemented) | Open licenses (CC0/CC BY per dataset). Precomputed into the pack by a build script; never called at runtime. |
 | Regional likelihood (alt) | eBird API 2.0 | Free for non-commercial; **commercial use requires written permission from Cornell**. Do not build the core product on it unless we secure that. |
 | Descriptions | Wikipedia page summaries (via the REST summary API) | CC BY-SA 4.0. Show a "From Wikipedia" credit with a link. |
 | Photos | Wikimedia Commons lead image from each species' Wikipedia page (v1); iNaturalist CC photos later | Author and license fetched per image from Commons and stored; credit shown under the photo. Quality is uneven; curate later. |
 | Reference sounds | Xeno-canto (API v3, free key) | Mostly CC BY-NC-SA / BY-NC-ND. Playback with attribution inside the app, distributed only inside our sound packs. Revisit if monetizing. |
-| Species attributes (size/color/behavior) | Our own curated dataset | See §4.2. This is a build-it-ourselves item. |
+| Species attributes (size/color/behavior) | Our own: family table + mined colors + overrides (implemented) | See §4.2. |
 
 Licensing takeaway: **stay off the eBird API and BirdNET for core paths** so monetization stays an open option, and keep both the classifier and the likelihood data source behind interfaces so switching (for example to eBird data) is a configuration change. Every media asset carries an attribution string in the database.
 
@@ -333,6 +339,9 @@ Taxonomy import, regional likelihood table for North America from GBIF, first pa
 
 **Phase 1 — Catch & list (MVP core)**
 Auth, species browser, manual catch, wizard ID, life list, profile. Offline queue. This is a usable app on its own.
+
+**Phase 1a — Question wizard** (done)
+Four-step wizard on its own tab: where and when, size, colors, behavior. Attribute and likelihood data built by scripts in `tools/`.
 
 **Phase 1b — Species pages and packs**
 Descriptions and photos on species pages (done, via Wikipedia URLs). Xeno-canto fetch script, sound playback on species pages, then the pack builder and the in-app download chooser.

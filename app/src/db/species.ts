@@ -17,6 +17,12 @@ export type Species = {
   imageLicense: string | null;
   imageLicenseUrl: string | null;
   imagePage: string | null;
+  /** Comma-separated size classes 1–4 (sparrow, robin, crow, goose). */
+  sizeClasses: string | null;
+  colors: string | null;
+  behaviors: string | null;
+  freqUsca: number | null;
+  freqMonths: string | null;
 };
 
 export type SpeciesWithCount = Species & { catchCount: number };
@@ -38,6 +44,11 @@ const COLUMNS = `
   s.image_license     AS imageLicense,
   s.image_license_url AS imageLicenseUrl,
   s.image_page        AS imagePage,
+  s.size_classes      AS sizeClasses,
+  s.colors,
+  s.behaviors,
+  s.freq_usca         AS freqUsca,
+  s.freq_months       AS freqMonths,
   (SELECT COUNT(*) FROM sightings g WHERE g.species_code = s.code AND g.deleted_at IS NULL) AS catchCount
 `;
 

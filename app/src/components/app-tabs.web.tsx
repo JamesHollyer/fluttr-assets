@@ -22,6 +22,9 @@ export default function AppTabs() {
           <TabTrigger name="index" href="/" asChild>
             <TabButton>Species</TabButton>
           </TabTrigger>
+          <TabTrigger name="identify" href="/identify" asChild>
+            <TabButton>Identify</TabButton>
+          </TabTrigger>
           <TabTrigger name="life-list" href="/life-list" asChild>
             <TabButton>Life list</TabButton>
           </TabTrigger>

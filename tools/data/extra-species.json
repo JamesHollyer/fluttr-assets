@@ -1,0 +1,4 @@
+{
+  "_doc": "eBird species codes to force into the pack. These are recent eBird splits that the AOS checklist still lists under the parent name, so the scientific-name join misses them.",
+  "codes": ["yelwar1", "whimbr3", "relthr3", "tropew4", "whfant4", "lotwoo3", "lotwoo5", "olifla2"]
+}
