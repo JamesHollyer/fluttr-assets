@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { CatchCelebration } from '@/components/catch-celebration';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -68,22 +69,12 @@ export default function CatchScreen() {
   if (result) {
     return (
       <ThemedView style={styles.container}>
-        <View style={[styles.content, styles.celebrate]}>
-          <View style={[styles.badge, { backgroundColor: theme.highlightSoft }]}>
-            <ThemedText type="subtitle" style={{ color: theme.highlight }}>
-              {result.isLifer ? 'Lifer!' : `#${result.catchNumber}`}
-            </ThemedText>
-          </View>
-          <ThemedText type="subtitle" style={styles.center}>
-            {species.commonName}
-          </ThemedText>
-          <ThemedText themeColor="textSecondary" style={styles.center}>
-            {result.isLifer
-              ? 'First time on your life list.'
-              : `You have caught this bird ${result.catchNumber} times.`}
-          </ThemedText>
-          <Button title="Done" onPress={() => router.back()} style={styles.done} />
-        </View>
+        <CatchCelebration
+          commonName={species.commonName}
+          isLifer={result.isLifer}
+          catchNumber={result.catchNumber}
+          onDone={() => router.back()}
+        />
       </ThemedView>
     );
   }
@@ -165,23 +156,5 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.three,
     borderWidth: StyleSheet.hairlineWidth,
     textAlignVertical: 'top',
-  },
-  celebrate: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.three,
-  },
-  badge: {
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.four,
-    borderRadius: Spacing.five,
-  },
-  center: {
-    textAlign: 'center',
-  },
-  done: {
-    alignSelf: 'stretch',
-    marginTop: Spacing.four,
   },
 });
