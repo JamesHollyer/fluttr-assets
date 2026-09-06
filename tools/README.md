@@ -27,12 +27,11 @@ Hand-maintained inputs: `data/family-attributes.json`, `data/attribute-overrides
 
 ## Resuming the thumbnail build
 
-The build is paced at Wikimedia's anonymous limit (10 requests/minute, ~3 hours for the
-full set). Adding a contact email or URL to `UA` in `build_thumbnails.py` raises the
-allowance to 200/minute (~15 minutes). To resume:
+The build is paced at ~150 requests/minute, under the 200/minute Wikimedia allows a
+client whose User-Agent carries a contact (about 15 minutes for the full set; without a
+contact the limit is 10/minute). To resume:
 
     python3 tools/build_thumbnails.py        # picks up where it left off
     git add app/assets/thumbs app/src/data/thumbs.ts && git commit -m "More thumbnails"
 
-Wikimedia asks that the User-Agent on every fetcher carry a contact; add one before
-running any of them at scale.
+Every fetcher's User-Agent carries a contact email, as Wikimedia's policy asks.

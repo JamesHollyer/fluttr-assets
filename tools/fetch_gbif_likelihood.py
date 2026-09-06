@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 PACK = ROOT / "app/assets/data/species-na.json"
 OUT = ROOT / "tools/data/gbif-likelihood.json"
-UA = "FluttrSpeciesPackBuilder/0.2 (bird watching app data build)"
+UA = "FluttrSpeciesPackBuilder/0.3 (bird watching app data build; j.c.hollyer@gmail.com)"
 API = "https://api.gbif.org/v1/"
 
 def get(path, params):

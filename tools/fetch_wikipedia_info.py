@@ -11,15 +11,13 @@ Writes: tools/data/wiki-info.json  (keyed by eBird code; resumable)
 Text is CC BY-SA 4.0 (credit "Wikipedia"). Images carry their own author and
 license from Commons; both are stored so the app can credit them.
 
-Wikimedia asks that automated clients identify themselves with a contact; put
-one in UA below before running at scale.
 """
 import json, pathlib, re, socket, sys, time, urllib.error, urllib.parse, urllib.request
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 PACK = ROOT / "app/assets/data/species-na.json"
 OUT = ROOT / "tools/data/wiki-info.json"
-UA = "FluttrSpeciesPackBuilder/0.2 (bird watching app data build; contact: add-your-email-here)"
+UA = "FluttrSpeciesPackBuilder/0.3 (bird watching app data build; j.c.hollyer@gmail.com)"
 BATCH_PAGES = 20   # TextExtracts allows at most 20 intro extracts per request
 BATCH_FILES = 50
 DELAY = 1.2        # seconds between requests

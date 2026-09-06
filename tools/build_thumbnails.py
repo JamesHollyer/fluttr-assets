@@ -16,14 +16,14 @@ PACK = ROOT / "app/assets/data/species-na.json"
 SRC = ROOT / "tools/data/thumbs-src"
 OUT = ROOT / "app/assets/thumbs"
 MAP = ROOT / "app/src/data/thumbs.ts"
-UA = "FluttrSpeciesPackBuilder/0.2 (bird watching app data build)"
+UA = "FluttrSpeciesPackBuilder/0.3 (bird watching app data build; j.c.hollyer@gmail.com)"
 SRC_WIDTH = 320
 SIZE = 144
 QUALITY = 72
 
 # Wikimedia allows 10 requests/minute for clients whose User-Agent has no contact info,
 # and 200/minute when it does. Put a contact (URL or email) in UA to run ~20x faster.
-DELAY = 6.5
+DELAY = 0.4          # ~150/min, under the 200/min allowed with a contact in UA
 _last = 0.0
 
 def clean(url):
