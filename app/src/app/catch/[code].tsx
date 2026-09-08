@@ -16,7 +16,7 @@ import { captureLocation, type Coords } from '@/lib/location';
 type LocationState = { status: 'finding' } | { status: 'found'; coords: Coords } | { status: 'none' };
 
 export default function CatchScreen() {
-  const { code } = useLocalSearchParams<{ code: string }>();
+  const { code, method } = useLocalSearchParams<{ code: string; method?: string }>();
   const db = useSQLiteContext();
   const router = useRouter();
   const theme = useTheme();
@@ -53,7 +53,7 @@ export default function CatchScreen() {
         note,
         lat: coords?.lat ?? null,
         lng: coords?.lng ?? null,
-        method: 'manual',
+        method: method === 'sound' || method === 'wizard' ? method : 'manual',
       });
       setResult(saved);
     } catch (err) {

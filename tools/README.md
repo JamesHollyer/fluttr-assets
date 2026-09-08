@@ -35,3 +35,36 @@ contact the limit is 10/minute). To resume:
     git add app/assets/thumbs app/src/data/thumbs.ts && git commit -m "More thumbnails"
 
 Every fetcher's User-Agent carries a contact email, as Wikimedia's policy asks.
+
+## Sound ID model
+
+`perch_test.py <audio>` validates the model on a recording. `build_perch_labels.py` writes the
+class list the app bundles. The model files live in `tools/models/` (not committed):
+
+- `perch_v2.onnx` — Google Perch v2, Apache 2.0, from https://huggingface.co/justinchuby/Perch-onnx (409 MB float).
+- `perch_v2_int8.onnx` — the app's model: dense layers quantized to int8 (131 MB). Rebuild with the
+  snippet in the git history of this README's commit, or run `perch_test.py --quantized` to check it.
+- `perch_v2_ebird_classes.csv`, `labels.csv` — from https://huggingface.co/cgeorgiaw/Perch.
+
+Python deps are in `.venv` (`python3 -m venv .venv && .venv/bin/pip install numpy onnxruntime onnx soundfile scipy`).
+
+During development the app downloads the model from this machine:
+
+    cd tools/models && python3 -m http.server 8090 --bind 0.0.0.0
+
+The app derives the URL from Metro's host, or set `EXPO_PUBLIC_MODEL_URL`.
+
+# Development builds
+
+Sound ID needs native modules (ONNX Runtime, the audio API), so the app runs as a development
+build rather than in Expo Go. What this machine needed, all without admin rights:
+
+- **JDK 21** in `~/.local/jdk` (Temurin). The JDK 25 bundled with Android Studio makes the Android
+  Gradle plugin fail with "A restricted method in java.lang.System has been called".
+- **CocoaPods** under Homebrew's portable Ruby 3.4 in `~/.local/portable-ruby` (system Ruby 2.6
+  is too old). Both are on PATH via `~/.zshrc`.
+- `patches/onnxruntime-react-native+1.24.3.patch` (applied by `postinstall`): a Gradle 9 fix and
+  removal of a legacy `unimodule.json` that made Expo autolinking skip the package on Android.
+
+Build and run (from `app/`): `npx expo run:ios`, `npx expo run:android`. Add `--no-bundler` when
+Metro is already running. `npx expo start` serves both dev builds.

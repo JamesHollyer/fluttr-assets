@@ -8,7 +8,8 @@
     "scheme": "fluttr",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.fluttr.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -17,7 +18,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.fluttr.app"
     },
     "web": {
       "output": "static",
@@ -38,6 +40,16 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "Fluttr saves where you caught a bird. Your exact location is never shown to other people."
+        }
+      ],
+      "expo-asset",
+      [
+        "react-native-audio-api",
+        {
+          "iosMicrophonePermission": "Fluttr listens to identify birds by their songs and calls. Audio is analyzed on your phone and is not stored unless you attach it to a catch.",
+          "androidPermissions": [
+            "android.permission.RECORD_AUDIO"
+          ]
         }
       ]
     ],

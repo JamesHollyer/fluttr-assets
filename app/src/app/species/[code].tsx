@@ -16,7 +16,7 @@ import { formatDateTime } from '@/lib/format';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function SpeciesDetailScreen() {
-  const { code } = useLocalSearchParams<{ code: string }>();
+  const { code, method } = useLocalSearchParams<{ code: string; method?: string }>();
   const db = useSQLiteContext();
   const router = useRouter();
   const theme = useTheme();
@@ -90,7 +90,7 @@ export default function SpeciesDetailScreen() {
 
         <Button
           title={species.catchCount === 0 ? 'Catch it' : 'Catch it again'}
-          onPress={() => router.push({ pathname: '/catch/[code]', params: { code } })}
+          onPress={() => router.push({ pathname: '/catch/[code]', params: method ? { code, method } : { code } })}
         />
 
         {species.description ? (

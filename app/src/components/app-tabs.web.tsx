@@ -25,6 +25,9 @@ export default function AppTabs() {
           <TabTrigger name="identify" href="/identify" asChild>
             <TabButton>Identify</TabButton>
           </TabTrigger>
+          <TabTrigger name="listen" href="/listen" asChild>
+            <TabButton>Sound ID</TabButton>
+          </TabTrigger>
           <TabTrigger name="life-list" href="/life-list" asChild>
             <TabButton>Life list</TabButton>
           </TabTrigger>
