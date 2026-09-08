@@ -1,6 +1,6 @@
 # Social Bird Watching App — Design Document
 
-**Status:** Draft v0.4 (2026-09-03)
+**Status:** Draft v0.5 (2026-09-08)
 **Name:** Fluttr (working title)
 **Platforms:** iOS, Android, Web
 
@@ -30,6 +30,11 @@ The pitch in one line: *Merlin's identification, Pokémon's collecting, Strava's
 - Species descriptions and photos come from Wikipedia and Wikimedia Commons. For now the app stores image URLs and caches on view; images move into the photo pack when packs are built.
 - Regional likelihood comes from GBIF occurrence counts (US and Canada, by month) rather than eBird, which needs permission, or the ABA checklist, whose download is currently an empty file.
 - Wizard attributes are built from a hand-curated family and genus table, colors mined from names and Wikipedia text, and a hand-checked override list for about 230 common species. Improve by editing the override file.
+
+**2026-09-08**
+- Sound ID runs on-device with **Perch v2** (Apache 2.0) through ONNX Runtime. The float model is 409 MB; quantizing only the dense class head to int8 gives 131 MB with no visible accuracy loss on test recordings, and avoids operators mobile runtimes lack. Scoring is a softmax over regional candidates with the frequency prior as a log bias, plus a silence gate.
+- The app is now a **development build** (Xcode / Android Studio), not Expo Go, because native modules are required. The model is downloaded on first use rather than bundled; hosting it is part of the packs work.
+- Live microphone capture could not be exercised on this machine's simulators (no host audio); it needs a phone. On-device inference was verified with a bundled recording.
 
 ### Goals
 
@@ -346,7 +351,7 @@ Four-step wizard on its own tab: where and when, size, colors, behavior. Attribu
 **Phase 1b — Species pages and packs**
 Descriptions and photos on species pages (done, via Wikipedia URLs). Xeno-canto fetch script, sound playback on species pages, then the pack builder and the in-app download chooser.
 
-**Phase 2 — Sound ID**
+**Phase 2 — Sound ID** (on-device inference done; live-mic testing on a phone pending)
 Runtime spike for Perch on mobile, then on-device classifier via a native module, spectrogram, likelihood prior from the region pack, catch from detection. Inference service for web and fallback.
 
 **Phase 3 — Badges**
