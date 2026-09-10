@@ -16,8 +16,8 @@ function Header() {
         Commons Attribution-ShareAlike 4.0 license. Photos come from Wikimedia Commons and are the
         work of the photographers below, under the license shown for each. Species list and
         taxonomy from eBird/Clements (Cornell Lab of Ornithology) and the AOS North American
-        checklist. Regional frequency from GBIF occurrence data. Bird sounds come from Wikimedia Commons
-        contributors, many mirrored from Xeno-canto; each recording shows its recordist and license.
+        checklist. Regional frequency from GBIF occurrence data. Bird sounds come from Xeno-canto and
+        Wikimedia Commons contributors; each recording shows its recordist and license.
       </ThemedText>
       <ThemedText type="smallBold" themeColor="textSecondary" style={styles.sectionLabel}>
         PHOTOS

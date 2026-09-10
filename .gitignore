@@ -2,3 +2,4 @@
 tools/data/thumbs-src/
 .venv/
 tools/models/
+tools/.env

@@ -1,6 +1,6 @@
 # Social Bird Watching App — Design Document
 
-**Status:** Draft v0.7 (2026-09-10)
+**Status:** Draft v0.8 (2026-09-10)
 **Name:** Fluttr (working title)
 **Platforms:** iOS, Android, Web
 
@@ -46,6 +46,8 @@ The pitch in one line: *Merlin's identification, Pokémon's collecting, Strava's
 - Bird sounds shipped from **Wikimedia Commons** rather than Xeno-canto: Xeno-canto's API now requires an account key, while Commons mirrors thousands of its recordings under Creative Commons and serves an MP3 rendition of every OGG (iOS cannot play OGG). Up to six clips per species, classified song / call / alarm / flight call / drumming from their descriptions. Coverage is uneven; switching to Xeno-canto later improves it.
 - Clips stream by default and can be saved per species for offline use, the first piece of the "Sounds" download pack. Wikimedia requires an identifying User-Agent on media requests.
 - A one-time playback ethics note appears before the first clip.
+- Later the same day the user created a **Xeno-canto** account. Its API (v3, key kept in `tools/.env`, never committed) is now the primary sound source: MP3 originals only (some uploads are WAV), quality C or better, 3–120 s, up to six per species mixing songs and calls, with Commons filling gaps. Xeno-canto clips are almost all CC BY-NC-SA or BY-NC-ND, which is fine for a free app with credits and must be revisited before any monetization.
+- A **Downloads** screen holds the offline packs: "Bird sounds · United States & Canada" is the three shortest clips per species (about 1,000 clips, roughly 700 MB at source bitrates), downloadable with pause and resume; the Sound ID model's status; photos as a later pack. A server-built pack with trimmed, re-encoded clips would be several times smaller.
 
 ### Goals
 

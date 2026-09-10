@@ -71,10 +71,9 @@ Metro is already running. `npx expo start` serves both dev builds.
 
 ## Bird sounds
 
-`fetch_recordings.py` searches Wikimedia Commons for audio per species (many are Xeno-canto
+`fetch_xc_recordings.py` queries Xeno-canto (API v3; key in `tools/.env` as `XC_API_KEY`, not committed) for MP3 clips of quality C or better. `fetch_recordings.py` searches Wikimedia Commons for audio per species (many are Xeno-canto
 mirrors under Creative Commons), keeps up to six clips under three minutes with an MP3
 rendition (iOS cannot play OGG), and classifies each as song, call, alarm, flight call, or
-drumming from its description. `build_recordings_pack.py` writes
+drumming from its description. `build_recordings_pack.py` merges both (Xeno-canto first) and writes
 `app/assets/data/recordings-na.json`, which the app seeds into its `recordings` table. Clips
-stream from Commons until the user saves a species for offline use. Xeno-canto's own API needs
-an account key; switching to it later would improve coverage and quality tags.
+stream from Commons until the user saves a species for offline use.
