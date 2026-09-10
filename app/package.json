@@ -8,6 +8,7 @@
     "@supabase/supabase-js": "^2.116.0",
     "expo": "~57.0.19",
     "expo-asset": "~57.0.16",
+    "expo-audio": "~57.0.4",
     "expo-constants": "~57.0.17",
     "expo-crypto": "~57.0.2",
     "expo-device": "~57.0.1",
@@ -52,7 +53,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package && rm -f node_modules/onnxruntime-react-native/unimodule.json"
   },
   "private": true
 }

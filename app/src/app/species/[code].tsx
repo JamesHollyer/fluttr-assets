@@ -5,6 +5,7 @@ import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { EmptyState } from '@/components/empty-state';
+import { SoundsSection } from '@/components/sounds-section';
 import { SpeciesPhoto } from '@/components/species-photo';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -113,6 +114,8 @@ export default function SpeciesDetailScreen() {
             ) : null}
           </View>
         ) : null}
+
+        <SoundsSection speciesCode={species.code} commonName={species.commonName} />
 
         <View style={styles.section}>
           <ThemedText type="smallBold" themeColor="textSecondary" style={styles.sectionLabel}>

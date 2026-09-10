@@ -1,10 +1,12 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import recordingsPack from '@/assets/data/recordings-na.json';
 import pack from '@/assets/data/species-na.json';
 
 export const DATABASE_NAME = 'fluttr.db';
 
 const SPECIES_PACK_KEY = 'species_pack';
+const RECORDINGS_PACK_KEY = 'recordings_pack';
 
 type PackSpecies = {
   code: string;
@@ -127,7 +129,29 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase): Promise<void> {
     await db.execAsync('PRAGMA user_version = 4;');
   }
 
+  if (version < 5) {
+    // Songs and calls per species, from the recordings pack. downloaded_at marks an offline copy.
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS recordings (
+        id            TEXT PRIMARY KEY NOT NULL,
+        species_code  TEXT NOT NULL REFERENCES species (code),
+        kind          TEXT NOT NULL,
+        url           TEXT NOT NULL,
+        duration      REAL NOT NULL,
+        title         TEXT,
+        recordist     TEXT,
+        license       TEXT,
+        license_url   TEXT,
+        page_url      TEXT,
+        downloaded_at TEXT
+      );
+      CREATE INDEX IF NOT EXISTS recordings_species ON recordings (species_code);
+    `);
+    await db.execAsync('PRAGMA user_version = 5;');
+  }
+
   await seedSpeciesPack(db);
+  await seedRecordingsPack(db);
 }
 
 async function seedSpeciesPack(db: SQLiteDatabase): Promise<void> {
@@ -212,6 +236,60 @@ async function seedSpeciesPack(db: SQLiteDatabase): Promise<void> {
     await tx.runAsync(
       'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value',
       SPECIES_PACK_KEY,
+      stamp,
+    );
+  });
+}
+
+type PackRecording = {
+  code: string;
+  id: string;
+  kind: string;
+  url: string;
+  duration: number;
+  title?: string | null;
+  recordist?: string | null;
+  license?: string | null;
+  licenseUrl?: string | null;
+  page?: string | null;
+};
+
+async function seedRecordingsPack(db: SQLiteDatabase): Promise<void> {
+  const stamp = `${recordingsPack.id}:${recordingsPack.version}:${recordingsPack.generated}`;
+  const current = await db.getFirstAsync<{ value: string }>('SELECT value FROM meta WHERE key = ?', RECORDINGS_PACK_KEY);
+  if (current?.value === stamp) return;
+
+  const rows = recordingsPack.recordings as PackRecording[];
+  await db.withExclusiveTransactionAsync(async (tx) => {
+    const insert = await tx.prepareAsync(`
+      INSERT INTO recordings (id, species_code, kind, url, duration, title, recordist, license, license_url, page_url)
+      VALUES ($id, $code, $kind, $url, $duration, $title, $recordist, $license, $licenseUrl, $page)
+      ON CONFLICT (id) DO UPDATE SET
+        species_code = excluded.species_code, kind = excluded.kind, url = excluded.url, duration = excluded.duration,
+        title = excluded.title, recordist = excluded.recordist, license = excluded.license,
+        license_url = excluded.license_url, page_url = excluded.page_url
+    `);
+    try {
+      for (const r of rows) {
+        await insert.executeAsync({
+          $id: r.id,
+          $code: r.code,
+          $kind: r.kind,
+          $url: r.url,
+          $duration: r.duration,
+          $title: r.title ?? null,
+          $recordist: r.recordist ?? null,
+          $license: r.license ?? null,
+          $licenseUrl: r.licenseUrl ?? null,
+          $page: r.page ?? null,
+        });
+      }
+    } finally {
+      await insert.finalizeAsync();
+    }
+    await tx.runAsync(
+      'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value',
+      RECORDINGS_PACK_KEY,
       stamp,
     );
   });
