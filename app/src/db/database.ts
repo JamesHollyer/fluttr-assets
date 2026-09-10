@@ -260,33 +260,35 @@ async function seedRecordingsPack(db: SQLiteDatabase): Promise<void> {
   if (current?.value === stamp) return;
 
   const rows = recordingsPack.recordings as PackRecording[];
+  const BATCH = 200;
   await db.withExclusiveTransactionAsync(async (tx) => {
-    const insert = await tx.prepareAsync(`
-      INSERT INTO recordings (id, species_code, kind, url, duration, title, recordist, license, license_url, page_url)
-      VALUES ($id, $code, $kind, $url, $duration, $title, $recordist, $license, $licenseUrl, $page)
-      ON CONFLICT (id) DO UPDATE SET
-        species_code = excluded.species_code, kind = excluded.kind, url = excluded.url, duration = excluded.duration,
-        title = excluded.title, recordist = excluded.recordist, license = excluded.license,
-        license_url = excluded.license_url, page_url = excluded.page_url
-    `);
-    try {
-      for (const r of rows) {
-        await insert.executeAsync({
-          $id: r.id,
-          $code: r.code,
-          $kind: r.kind,
-          $url: r.url,
-          $duration: r.duration,
-          $title: r.title ?? null,
-          $recordist: r.recordist ?? null,
-          $license: r.license ?? null,
-          $licenseUrl: r.licenseUrl ?? null,
-          $page: r.page ?? null,
-        });
-      }
-    } finally {
-      await insert.finalizeAsync();
+    // Multi-row upserts: ten thousand single inserts take a long time on a phone.
+    for (let i = 0; i < rows.length; i += BATCH) {
+      const chunk = rows.slice(i, i + BATCH);
+      const placeholders = chunk.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
+      const params = chunk.flatMap((r) => [
+        r.id, r.code, r.kind, r.url, r.duration, r.title ?? null, r.recordist ?? null,
+        r.license ?? null, r.licenseUrl ?? null, r.page ?? null,
+      ]);
+      await tx.runAsync(
+        `INSERT INTO recordings (id, species_code, kind, url, duration, title, recordist, license, license_url, page_url)
+         VALUES ${placeholders}
+         ON CONFLICT (id) DO UPDATE SET
+           species_code = excluded.species_code, kind = excluded.kind, url = excluded.url, duration = excluded.duration,
+           title = excluded.title, recordist = excluded.recordist, license = excluded.license,
+           license_url = excluded.license_url, page_url = excluded.page_url`,
+        params,
+      );
     }
+    // Drop clips that left the pack, keeping downloaded_at on the ones that stayed.
+    await tx.execAsync('CREATE TEMP TABLE IF NOT EXISTS pack_ids (id TEXT PRIMARY KEY)');
+    await tx.execAsync('DELETE FROM pack_ids');
+    for (let i = 0; i < rows.length; i += BATCH) {
+      const chunk = rows.slice(i, i + BATCH);
+      await tx.runAsync(`INSERT OR IGNORE INTO pack_ids (id) VALUES ${chunk.map(() => '(?)').join(', ')}`, chunk.map((r) => r.id));
+    }
+    await tx.execAsync('DELETE FROM recordings WHERE id NOT IN (SELECT id FROM pack_ids)');
+    await tx.execAsync('DROP TABLE pack_ids');
     await tx.runAsync(
       'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value',
       RECORDINGS_PACK_KEY,
