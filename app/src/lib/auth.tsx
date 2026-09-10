@@ -1,4 +1,5 @@
 import type { Session, User } from '@supabase/supabase-js';
+import * as Linking from 'expo-linking';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { supabase } from './supabase';
@@ -8,13 +9,28 @@ type AuthState = {
   loading: boolean;
   session: Session | null;
   user: User | null;
-  /** Emails a six-digit code. */
+  /** Emails a sign-in link that opens the app (and a code, when the mail template includes one). */
   sendCode: (email: string) => Promise<void>;
   verifyCode: (email: string, code: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
+
+/** Where the sign-in email's link sends the user: straight back into the app. */
+export const AUTH_REDIRECT_URL = Linking.createURL('auth-callback');
+
+/** Pull session tokens (or an error) out of a magic-link redirect URL. */
+function parseAuthUrl(url: string): { accessToken?: string; refreshToken?: string; code?: string; error?: string } | null {
+  if (!url.includes('auth-callback')) return null;
+  const params = new URLSearchParams(url.split(/[#?]/).slice(1).join('&'));
+  return {
+    accessToken: params.get('access_token') ?? undefined,
+    refreshToken: params.get('refresh_token') ?? undefined,
+    code: params.get('code') ?? undefined,
+    error: params.get('error_description') ?? params.get('error') ?? undefined,
+  };
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -27,12 +43,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then(({ data }) => setSession(data.session))
       .finally(() => setLoading(false));
     const { data } = supabase.auth.onAuthStateChange((_event, next) => setSession(next));
-    return () => data.subscription.unsubscribe();
+
+    // The sign-in email links back into the app; finish the sign-in from the URL.
+    const handleUrl = async (url: string | null) => {
+      if (!url || !supabase) return;
+      const parsed = parseAuthUrl(url);
+      if (!parsed) return;
+      if (parsed.error) {
+        console.warn('Sign-in link error:', parsed.error);
+        return;
+      }
+      if (parsed.accessToken && parsed.refreshToken) {
+        await supabase.auth.setSession({ access_token: parsed.accessToken, refresh_token: parsed.refreshToken });
+      } else if (parsed.code) {
+        await supabase.auth.exchangeCodeForSession(parsed.code);
+      }
+    };
+    Linking.getInitialURL().then(handleUrl).catch(console.warn);
+    const linkSub = Linking.addEventListener('url', ({ url }) => {
+      handleUrl(url).catch(console.warn);
+    });
+
+    return () => {
+      data.subscription.unsubscribe();
+      linkSub.remove();
+    };
   }, []);
 
   const sendCode = useCallback(async (email: string) => {
     if (!supabase) throw new Error('Sync is not set up in this build.');
-    const { error } = await supabase.auth.signInWithOtp({ email: email.trim(), options: { shouldCreateUser: true } });
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: { shouldCreateUser: true, emailRedirectTo: AUTH_REDIRECT_URL },
+    });
     if (error) throw error;
   }, []);
 
