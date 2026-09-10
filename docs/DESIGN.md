@@ -1,6 +1,6 @@
 # Social Bird Watching App — Design Document
 
-**Status:** Draft v0.5 (2026-09-08)
+**Status:** Draft v0.6 (2026-09-09)
 **Name:** Fluttr (working title)
 **Platforms:** iOS, Android, Web
 
@@ -35,6 +35,12 @@ The pitch in one line: *Merlin's identification, Pokémon's collecting, Strava's
 - Sound ID runs on-device with **Perch v2** (Apache 2.0) through ONNX Runtime. The float model is 409 MB; quantizing only the dense class head to int8 gives 131 MB with no visible accuracy loss on test recordings, and avoids operators mobile runtimes lack. Scoring is a softmax over regional candidates with the frequency prior as a log bias, plus a silence gate.
 - The app is now a **development build** (Xcode / Android Studio), not Expo Go, because native modules are required. The model is downloaded on first use rather than bundled; hosting it is part of the packs work.
 - Live microphone capture could not be exercised on this machine's simulators (no host audio); it needs a phone. On-device inference was verified with a bundled recording.
+
+**2026-09-09**
+- Backend is live on **Supabase** (free tier, project `jrrakzicvqjxteelpcjd`): `profiles` and `sightings` tables with row-level security, a profile-on-signup trigger, and a server clock column for incremental pulls. Schema lives in `supabase/migrations/`.
+- Sync is local-first: the phone's SQLite stays the source of truth; catches upload on sign-in, on foreground, and after every write, and server changes pull by cursor. Last write wins by the phone clock; deletes travel as `deleted_at`. Verified from a Pixel 10 to Postgres.
+- Sign-in is a **magic link** by email. The free tier cannot customize email templates (so no one-time code) and sends at most 2 emails per hour. Hosting a landing page on supabase.co does not work because it serves HTML as plain text by design, and Supabase rejects `intent://` redirects, so the link redirects straight to `fluttr://auth-callback`, which Chrome on Android follows. A custom email provider lifts both limits.
+- The repo is on GitHub (JamesHollyer/Fluttr, private).
 
 ### Goals
 
@@ -356,6 +362,9 @@ Runtime spike for Perch on mobile, then on-device classifier via a native module
 
 **Phase 3 — Badges**
 Rule engine, ~30 launch badges, celebration UI, badge showcase.
+
+**Phase 3b — Accounts and sync** (done)
+Supabase project, email sign-in, local-first sync of catches. Prerequisite for badges shared across devices and for friends.
 
 **Phase 4 — Friends**
 Friend requests, feed, congratulate, comments, notifications, privacy controls, sensitive species.
