@@ -1,6 +1,7 @@
 import type { Session, User } from '@supabase/supabase-js';
 import * as Linking from 'expo-linking';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { Platform } from 'react-native';
 
 import { supabase } from './supabase';
 
@@ -17,8 +18,15 @@ type AuthState = {
 
 const AuthContext = createContext<AuthState | null>(null);
 
-/** Where the sign-in email's link sends the user: straight back into the app. */
-export const AUTH_REDIRECT_URL = Linking.createURL('auth-callback');
+/**
+ * Where the sign-in email's link lands. On Android, email apps' built-in browsers
+ * refuse a redirect straight to a custom scheme but honour Chrome's intent:// form,
+ * which launches the app (fluttr://auth-callback?code=…). iOS opens the scheme directly.
+ */
+export const AUTH_REDIRECT_URL =
+  Platform.OS === 'android'
+    ? 'intent://auth-callback#Intent;scheme=fluttr;package=com.fluttr.app;end'
+    : Linking.createURL('auth-callback');
 
 /** Pull session tokens (or an error) out of a magic-link redirect URL. */
 function parseAuthUrl(url: string): { accessToken?: string; refreshToken?: string; code?: string; error?: string } | null {

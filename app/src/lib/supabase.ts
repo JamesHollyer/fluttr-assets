@@ -21,6 +21,9 @@ export const supabase: SupabaseClient | null = isSupabaseConfigured
         autoRefreshToken: true,
         persistSession: true,
         detectSessionInUrl: false,
+        // Code exchange puts the sign-in token in a query string, which survives Android's
+        // intent:// redirect (a URL fragment would not).
+        flowType: 'pkce',
       },
     })
   : null;
