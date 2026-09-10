@@ -1,6 +1,6 @@
 # Social Bird Watching App — Design Document
 
-**Status:** Draft v0.6 (2026-09-09)
+**Status:** Draft v0.7 (2026-09-10)
 **Name:** Fluttr (working title)
 **Platforms:** iOS, Android, Web
 
@@ -41,6 +41,11 @@ The pitch in one line: *Merlin's identification, Pokémon's collecting, Strava's
 - Sync is local-first: the phone's SQLite stays the source of truth; catches upload on sign-in, on foreground, and after every write, and server changes pull by cursor. Last write wins by the phone clock; deletes travel as `deleted_at`. Verified from a Pixel 10 to Postgres.
 - Sign-in is a **magic link** by email. The free tier cannot customize email templates (so no one-time code) and sends at most 2 emails per hour. Hosting a landing page on supabase.co does not work because it serves HTML as plain text by design, and Supabase rejects `intent://` redirects, so the link redirects straight to `fluttr://auth-callback`, which Chrome on Android follows. A custom email provider lifts both limits.
 - The repo is on GitHub (JamesHollyer/Fluttr, private).
+
+**2026-09-10**
+- Bird sounds shipped from **Wikimedia Commons** rather than Xeno-canto: Xeno-canto's API now requires an account key, while Commons mirrors thousands of its recordings under Creative Commons and serves an MP3 rendition of every OGG (iOS cannot play OGG). Up to six clips per species, classified song / call / alarm / flight call / drumming from their descriptions. Coverage is uneven; switching to Xeno-canto later improves it.
+- Clips stream by default and can be saved per species for offline use, the first piece of the "Sounds" download pack. Wikimedia requires an identifying User-Agent on media requests.
+- A one-time playback ethics note appears before the first clip.
 
 ### Goals
 
@@ -355,7 +360,7 @@ Auth, species browser, manual catch, wizard ID, life list, profile. Offline queu
 Four-step wizard on its own tab: where and when, size, colors, behavior. Attribute and likelihood data built by scripts in `tools/`.
 
 **Phase 1b — Species pages and packs**
-Descriptions and photos on species pages (done, via Wikipedia URLs). Xeno-canto fetch script, sound playback on species pages, then the pack builder and the in-app download chooser.
+Descriptions and photos on species pages (done). Sound playback on species pages with per-species offline save (done, from Commons). Still to do: the pack builder and the in-app download chooser.
 
 **Phase 2 — Sound ID** (on-device inference done; live-mic testing on a phone pending)
 Runtime spike for Perch on mobile, then on-device classifier via a native module, spectrogram, likelihood prior from the region pack, catch from detection. Inference service for web and fallback.

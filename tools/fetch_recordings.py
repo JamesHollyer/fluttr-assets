@@ -22,7 +22,7 @@ WORKERS = 4
 _lock = threading.Lock()
 SEARCH_LIMIT = 25
 MAX_PER_SPECIES = 6
-MAX_SECONDS = 180
+MAX_SECONDS = 300
 MIN_SECONDS = 2
 _last = 0.0
 
@@ -132,8 +132,53 @@ def pick(recs):
     return chosen
 
 
+def mentions(text, s):
+    """Loose searches return neighbours; keep only files that name this species."""
+    t = re.sub(r"[^a-z ]", " ", text.lower())
+    sci = s["sci"].lower()
+    common = re.sub(r"[^a-z ]", " ", s["common"].lower())
+    return sci in t or common in t
+
+
+def second_pass(species, done):
+    """For species still empty: unquoted scientific-name search, filtered by name mention."""
+    todo = [s for s in species if not done.get(s["code"]) and s.get("freq", {}).get("usca", 0) >= 200]
+    print("second pass over %d US/CA species without recordings" % len(todo), flush=True)
+
+    def work(s):
+        d = api({"action": "query", "list": "search", "srnamespace": 6, "srlimit": SEARCH_LIMIT,
+                 "srsearch": "filetype:audio %s" % s["sci"]})
+        titles = [h["title"] for h in d.get("query", {}).get("search", [])]
+        recs = []
+        if titles:
+            for title, (pageid, vi) in infos(titles).items():
+                meta = vi.get("extmetadata", {}) or {}
+                desc = strip_html(meta.get("ImageDescription", {}).get("value"))
+                if not mentions(title + " " + desc, s):
+                    continue
+                r = to_recording(title, pageid, vi)
+                if r:
+                    recs.append(r)
+        return s["code"], pick(recs)
+
+    found = 0
+    with ThreadPoolExecutor(max_workers=WORKERS) as ex:
+        for fut in as_completed([ex.submit(work, s) for s in todo]):
+            code, recs = fut.result()
+            if recs:
+                done[code] = recs
+                found += 1
+    OUT.write_text(json.dumps(done, ensure_ascii=False, indent=0))
+    print("second pass found recordings for %d more species" % found, flush=True)
+
+
 def main():
+    import sys
     species = json.loads(PACK.read_text())["species"]
+    if "--retry-missing" in sys.argv:
+        done = json.loads(OUT.read_text()) if OUT.exists() else {}
+        second_pass(species, done)
+        return
     done = json.loads(OUT.read_text()) if OUT.exists() else {}
     todo = [s for s in species if s["code"] not in done]
     print("species: %d, done: %d, to fetch: %d" % (len(species), len(done), len(todo)), flush=True)
