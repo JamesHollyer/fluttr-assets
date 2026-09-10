@@ -9,6 +9,7 @@ import { WINDOW_SAMPLES } from './classifier';
  * Source: Xeno-canto XC569289 via Wikimedia Commons, CC BY-SA 4.0, Eric B.
  */
 export async function loadSampleWindow(): Promise<Float32Array> {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- static asset reference
   const asset = Asset.fromModule(require('@/assets/data/sample-norcar.pcm'));
   await asset.downloadAsync();
   const uri = asset.localUri ?? asset.uri;

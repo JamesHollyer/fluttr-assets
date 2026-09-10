@@ -8,6 +8,8 @@ import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { DATABASE_NAME, migrateDbIfNeeded } from '@/db/database';
+import { AuthProvider } from '@/lib/auth';
+import { SyncProvider } from '@/lib/sync/use-sync';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -40,12 +42,17 @@ export default function RootLayout() {
       <AnimatedSplashOverlay />
       <Suspense fallback={<Loading />}>
         <SQLiteProvider databaseName={DATABASE_NAME} onInit={migrateDbIfNeeded} useSuspense>
+          <AuthProvider>
+            <SyncProvider>
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="species/[code]" options={{ title: '', headerBackButtonDisplayMode: 'minimal' }} />
             <Stack.Screen name="catch/[code]" options={{ title: 'Catch', presentation: 'modal' }} />
             <Stack.Screen name="credits" options={{ title: 'Credits' }} />
+            <Stack.Screen name="account" options={{ title: 'Account' }} />
           </Stack>
+            </SyncProvider>
+          </AuthProvider>
         </SQLiteProvider>
       </Suspense>
     </ThemeProvider>

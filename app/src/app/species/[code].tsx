@@ -13,6 +13,7 @@ import { deleteSighting, listSightingsForSpecies, type Sighting } from '@/db/sig
 import { getSpecies, type SpeciesWithCount } from '@/db/species';
 import { confirmAsync } from '@/lib/confirm';
 import { formatDateTime } from '@/lib/format';
+import { requestSync } from '@/lib/sync/sync';
 import { useTheme } from '@/hooks/use-theme';
 
 export default function SpeciesDetailScreen() {
@@ -42,6 +43,7 @@ export default function SpeciesDetailScreen() {
     );
     if (!ok) return;
     await deleteSighting(db, sighting.id);
+    requestSync();
     await load();
   }
 

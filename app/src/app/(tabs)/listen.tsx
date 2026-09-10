@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { FlatList, Platform, Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
@@ -15,15 +15,11 @@ import { MODEL_SIZE_MB } from '@/lib/sound/model';
 import { useSoundId, type HeardSpecies } from '@/lib/sound/use-sound-id';
 import { useSpeciesNames } from '@/lib/sound/use-species-names';
 
-const BARS = 24;
-
-function LevelMeter({ level, active }: { level: number; active: boolean }) {
+function LevelMeter({ levels, active }: { levels: number[]; active: boolean }) {
   const theme = useTheme();
-  const history = useRef<number[]>(new Array(BARS).fill(0));
-  history.current = [...history.current.slice(1), Math.min(1, level * 6)];
   return (
     <View style={styles.meter}>
-      {history.current.map((v, i) => (
+      {levels.map((v, i) => (
         <View
           key={i}
           style={[
@@ -31,7 +27,7 @@ function LevelMeter({ level, active }: { level: number; active: boolean }) {
             {
               height: 6 + v * 54,
               backgroundColor: active ? theme.accent : theme.backgroundSelected,
-              opacity: active ? 0.35 + 0.65 * (i / BARS) : 1,
+              opacity: active ? 0.35 + 0.65 * (i / levels.length) : 1,
             },
           ]}
         />
@@ -113,7 +109,7 @@ export default function ListenScreen() {
       )}
       {id.modelState === 'ready' && (
         <>
-          <LevelMeter level={id.level} active={listening} />
+          <LevelMeter levels={id.levels} active={listening} />
           <Button
             title={listening ? 'Stop' : 'Listen'}
             variant={listening ? 'secondary' : 'primary'}

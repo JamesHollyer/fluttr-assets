@@ -11,7 +11,9 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { addSighting, type CatchResult } from '@/db/sightings';
 import { getSpecies, type SpeciesWithCount } from '@/db/species';
 import { useTheme } from '@/hooks/use-theme';
+import { useAuth } from '@/lib/auth';
 import { captureLocation, type Coords } from '@/lib/location';
+import { requestSync } from '@/lib/sync/sync';
 
 type LocationState = { status: 'finding' } | { status: 'found'; coords: Coords } | { status: 'none' };
 
@@ -20,6 +22,7 @@ export default function CatchScreen() {
   const db = useSQLiteContext();
   const router = useRouter();
   const theme = useTheme();
+  const { user } = useAuth();
 
   const [species, setSpecies] = useState<SpeciesWithCount | null>(null);
   const [note, setNote] = useState('');
@@ -49,6 +52,7 @@ export default function CatchScreen() {
     try {
       const coords = location.status === 'found' ? location.coords : null;
       const saved = await addSighting(db, {
+        userId: user?.id ?? null,
         speciesCode: species.code,
         note,
         lat: coords?.lat ?? null,
@@ -56,6 +60,7 @@ export default function CatchScreen() {
         method: method === 'sound' || method === 'wizard' ? method : 'manual',
       });
       setResult(saved);
+      requestSync();
     } catch (err) {
       console.error(err);
       setSaving(false);

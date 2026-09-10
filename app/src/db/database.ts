@@ -118,6 +118,15 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase): Promise<void> {
     await db.execAsync('PRAGMA user_version = 3;');
   }
 
+  if (version < 4) {
+    // Account sync: which user owns a catch (null until first sign-in), plus a sync index.
+    await db.execAsync(`
+      ALTER TABLE sightings ADD COLUMN user_id TEXT;
+      CREATE INDEX IF NOT EXISTS sightings_sync ON sightings (user_id, synced_at);
+    `);
+    await db.execAsync('PRAGMA user_version = 4;');
+  }
+
   await seedSpeciesPack(db);
 }
 

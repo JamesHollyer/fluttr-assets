@@ -9,6 +9,8 @@ import { loadSampleWindow } from './sample';
 import { searchSpecies } from '@/db/species';
 import type { Region } from '@/lib/identify';
 
+const LEVEL_HISTORY = 24;
+
 export type ModelState = 'checking' | 'missing' | 'downloading' | 'ready';
 export type ListenState = 'idle' | 'starting' | 'listening' | 'error';
 
@@ -30,6 +32,8 @@ export function useSoundId(region: Region = 'usca') {
   const [listenState, setListenState] = useState<ListenState>('idle');
   const [error, setError] = useState<string | null>(null);
   const [level, setLevel] = useState(0);
+  /** Recent input levels, oldest first, for the meter. */
+  const [levels, setLevels] = useState<number[]>(() => new Array(LEVEL_HISTORY).fill(0));
   const [heard, setHeard] = useState<HeardSpecies[]>([]);
   const [windowsRun, setWindowsRun] = useState(0);
 
@@ -100,7 +104,10 @@ export function useSoundId(region: Region = 'usca') {
       setHeard([]);
       setWindowsRun(0);
       await mic.current.start({
-        onLevel: setLevel,
+        onLevel: (rms) => {
+          setLevel(rms);
+          setLevels((prev) => [...prev.slice(1), Math.min(1, rms * 6)]);
+        },
         onWindow: (window) => {
           if (busy.current) return; // drop a window rather than queue up
           busy.current = true;
@@ -144,8 +151,9 @@ export function useSoundId(region: Region = 'usca') {
   const stop = useCallback(async () => {
     await mic.current?.stop().catch(() => {});
     setLevel(0);
+    setLevels(new Array(LEVEL_HISTORY).fill(0));
     setListenState('idle');
   }, []);
 
-  return { modelState, progress, download, listenState, error, level, heard, windowsRun, start, stop, testWithSample };
+  return { modelState, progress, download, listenState, error, level, levels, heard, windowsRun, start, stop, testWithSample };
 }
