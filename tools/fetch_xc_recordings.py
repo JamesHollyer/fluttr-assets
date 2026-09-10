@@ -47,7 +47,9 @@ def query(q, key):
 
 
 def seconds(length):
-    parts = [int(p) for p in length.split(":")]
+    parts = [int(p) for p in str(length).split(":") if p.isdigit()]
+    if not parts:
+        return 0
     return parts[0] * 60 + parts[1] if len(parts) == 2 else parts[0] * 3600 + parts[1] * 60 + parts[2]
 
 
@@ -71,7 +73,7 @@ def classify(t):
 
 
 def to_recording(r):
-    if not r.get("file-name", "").lower().endswith(".mp3"):
+    if not (r.get("file-name") or "").lower().endswith(".mp3") or not r.get("length") or not r.get("file"):
         return None
     return {
         "id": "xc" + r["id"],
