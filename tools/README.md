@@ -77,3 +77,10 @@ rendition (iOS cannot play OGG), and classifies each as song, call, alarm, fligh
 drumming from its description. `build_recordings_pack.py` merges both (Xeno-canto first) and writes
 `app/assets/data/recordings-na.json`, which the app seeds into its `recordings` table. Clips
 stream from Commons until the user saves a species for offline use.
+
+## Male and female photos
+
+`fetch_inat_photos.py` pulls research-grade iNaturalist observations annotated Male or
+Female (Creative Commons photos, most-voted first, two per sex, different photographers),
+about one request per second. `build_photos_pack.py` writes `app/assets/data/photos-na.json`;
+the app seeds it into `species_photos` and shows a swipeable gallery on species pages.

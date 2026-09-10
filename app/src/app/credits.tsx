@@ -13,8 +13,8 @@ function Header() {
     <View style={styles.header}>
       <ThemedText>
         Species descriptions are adapted from Wikipedia and are available under the Creative
-        Commons Attribution-ShareAlike 4.0 license. Photos come from Wikimedia Commons and are the
-        work of the photographers below, under the license shown for each. Species list and
+        Commons Attribution-ShareAlike 4.0 license. Photos come from Wikimedia Commons and iNaturalist
+        and are the work of the photographers credited under each one. Species list and
         taxonomy from eBird/Clements (Cornell Lab of Ornithology) and the AOS North American
         checklist. Regional frequency from GBIF occurrence data. Bird sounds come from Xeno-canto and
         Wikimedia Commons contributors; each recording shows its recordist and license.

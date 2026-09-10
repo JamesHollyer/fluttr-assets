@@ -1,6 +1,6 @@
 # Social Bird Watching App — Design Document
 
-**Status:** Draft v0.8 (2026-09-10)
+**Status:** Draft v0.9 (2026-09-10)
 **Name:** Fluttr (working title)
 **Platforms:** iOS, Android, Web
 
@@ -48,6 +48,7 @@ The pitch in one line: *Merlin's identification, Pokémon's collecting, Strava's
 - A one-time playback ethics note appears before the first clip.
 - Later the same day the user created a **Xeno-canto** account. Its API (v3, key kept in `tools/.env`, never committed) is now the primary sound source: MP3 originals only (some uploads are WAV), quality C or better, 3–120 s, up to six per species mixing songs and calls, with Commons filling gaps. Xeno-canto clips are almost all CC BY-NC-SA or BY-NC-ND, which is fine for a free app with credits and must be revisited before any monetization.
 - A **Downloads** screen holds the offline packs: "Bird sounds · United States & Canada" is the three shortest clips per species (about 1,000 clips, roughly 700 MB at source bitrates), downloadable with pause and resume; the Sound ID model's status; photos as a later pack. A server-built pack with trimmed, re-encoded clips would be several times smaller.
+- After a successful field test the user asked for **male and female photos**, since many species differ sharply. Source: **iNaturalist** research-grade observations annotated with sex (controlled term 9: Female 10 / Male 11), Creative Commons photos only, most-voted first, two per sex per species, spread across photographers; adult photos of unknown sex fill in where a sex is missing. Species pages show a swipeable gallery with Male / Female chips and per-photo credits; the Wikipedia lead photo stays as the last slide. Photos stream at 500 px from iNaturalist's open-data bucket until the photo pack exists.
 
 ### Goals
 
@@ -241,7 +242,7 @@ Each species has a set of reference recordings tagged by type (song, call, alarm
 | Regional likelihood | GBIF occurrence API: record counts per species for US + CA, faceted by month (implemented) | Open licenses (CC0/CC BY per dataset). Precomputed into the pack by a build script; never called at runtime. |
 | Regional likelihood (alt) | eBird API 2.0 | Free for non-commercial; **commercial use requires written permission from Cornell**. Do not build the core product on it unless we secure that. |
 | Descriptions | Wikipedia page summaries (via the REST summary API) | CC BY-SA 4.0. Show a "From Wikipedia" credit with a link. |
-| Photos | Wikimedia Commons lead image from each species' Wikipedia page (v1); iNaturalist CC photos later | Author and license fetched per image from Commons and stored; credit shown under the photo. Quality is uneven; curate later. |
+| Photos | Wikimedia Commons lead image from each species' Wikipedia page, plus iNaturalist sex-annotated research-grade photos (implemented) | Author and license stored per image; credit shown under each photo. iNaturalist photos are mostly CC BY-NC. |
 | Reference sounds | Xeno-canto (API v3, free key) | Mostly CC BY-NC-SA / BY-NC-ND. Playback with attribution inside the app, distributed only inside our sound packs. Revisit if monetizing. |
 | Species attributes (size/color/behavior) | Our own: family table + mined colors + overrides (implemented) | See §4.2. |
 

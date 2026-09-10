@@ -6,7 +6,7 @@ import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Button } from '@/components/button';
 import { EmptyState } from '@/components/empty-state';
 import { SoundsSection } from '@/components/sounds-section';
-import { SpeciesPhoto } from '@/components/species-photo';
+import { PhotoGallery } from '@/components/photo-gallery';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
@@ -63,7 +63,8 @@ export default function SpeciesDetailScreen() {
     <ThemedView style={styles.container}>
       <Stack.Screen options={{ title: species.commonName }} />
       <ScrollView contentContainerStyle={styles.content}>
-        <SpeciesPhoto
+        <PhotoGallery
+          code={species.code}
           commonName={species.commonName}
           imageUrl={species.imageUrl}
           imageWidth={species.imageWidth}

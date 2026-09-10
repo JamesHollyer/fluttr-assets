@@ -1,5 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
+import photosPack from '@/assets/data/photos-na.json';
 import recordingsPack from '@/assets/data/recordings-na.json';
 import pack from '@/assets/data/species-na.json';
 
@@ -7,6 +8,7 @@ export const DATABASE_NAME = 'fluttr.db';
 
 const SPECIES_PACK_KEY = 'species_pack';
 const RECORDINGS_PACK_KEY = 'recordings_pack';
+const PHOTOS_PACK_KEY = 'photos_pack';
 
 type PackSpecies = {
   code: string;
@@ -150,8 +152,28 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase): Promise<void> {
     await db.execAsync('PRAGMA user_version = 5;');
   }
 
+  if (version < 6) {
+    // Extra photos per species (male / female / unknown) from the photos pack.
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS species_photos (
+        id           TEXT PRIMARY KEY NOT NULL,
+        species_code TEXT NOT NULL REFERENCES species (code),
+        sex          TEXT NOT NULL DEFAULT 'unknown',
+        url          TEXT NOT NULL,
+        width        INTEGER,
+        height       INTEGER,
+        attribution  TEXT,
+        license      TEXT,
+        page_url     TEXT
+      );
+      CREATE INDEX IF NOT EXISTS species_photos_species ON species_photos (species_code);
+    `);
+    await db.execAsync('PRAGMA user_version = 6;');
+  }
+
   await seedSpeciesPack(db);
   await seedRecordingsPack(db);
+  await seedPhotosPack(db);
 }
 
 async function seedSpeciesPack(db: SQLiteDatabase): Promise<void> {
@@ -292,6 +314,43 @@ async function seedRecordingsPack(db: SQLiteDatabase): Promise<void> {
     await tx.runAsync(
       'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value',
       RECORDINGS_PACK_KEY,
+      stamp,
+    );
+  });
+}
+
+type PackPhoto = {
+  code: string;
+  id: string;
+  sex: string;
+  url: string;
+  width?: number | null;
+  height?: number | null;
+  attribution?: string | null;
+  license?: string | null;
+  page?: string | null;
+};
+
+async function seedPhotosPack(db: SQLiteDatabase): Promise<void> {
+  const stamp = `${photosPack.id}:${photosPack.version}:${photosPack.generated}`;
+  const current = await db.getFirstAsync<{ value: string }>('SELECT value FROM meta WHERE key = ?', PHOTOS_PACK_KEY);
+  if (current?.value === stamp) return;
+
+  const rows = photosPack.photos as PackPhoto[];
+  const BATCH = 200;
+  await db.withExclusiveTransactionAsync(async (tx) => {
+    await tx.execAsync('DELETE FROM species_photos');
+    for (let i = 0; i < rows.length; i += BATCH) {
+      const chunk = rows.slice(i, i + BATCH);
+      await tx.runAsync(
+        `INSERT OR REPLACE INTO species_photos (id, species_code, sex, url, width, height, attribution, license, page_url)
+         VALUES ${chunk.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ')}`,
+        chunk.flatMap((p) => [p.id, p.code, p.sex, p.url, p.width ?? null, p.height ?? null, p.attribution ?? null, p.license ?? null, p.page ?? null]),
+      );
+    }
+    await tx.runAsync(
+      'INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value',
+      PHOTOS_PACK_KEY,
       stamp,
     );
   });
