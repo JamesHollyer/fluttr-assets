@@ -1,5 +1,5 @@
 import { setAudioModeAsync, useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useState } from 'react';
 import { Linking, Pressable, StyleSheet, View } from 'react-native';
@@ -28,6 +28,7 @@ type Props = { speciesCode: string; commonName: string };
 export function SoundsSection({ speciesCode, commonName }: Props) {
   const db = useSQLiteContext();
   const theme = useTheme();
+  const router = useRouter();
   const player = useAudioPlayer(null);
   const status = useAudioPlayerStatus(player);
   const [recordings, setRecordings] = useState<Recording[]>([]);
@@ -191,6 +192,11 @@ export function SoundsSection({ speciesCode, commonName }: Props) {
           </View>
         );
       })}
+      {canStoreOffline ? (
+        <Pressable accessibilityRole="link" onPress={() => router.push('/downloads')} hitSlop={6} style={styles.allLink}>
+          <ThemedText type="small" themeColor="textSecondary">Want every bird&apos;s sounds offline? Download the whole region.</ThemedText>
+        </Pressable>
+      ) : null}
       {error ? <ThemedText type="small" style={{ color: theme.danger }}>{error}</ThemedText> : null}
       {status.error && activeId ? <ThemedText type="small" style={{ color: theme.danger }}>{`Could not play: ${status.error}`}</ThemedText> : null}
     </View>
@@ -211,5 +217,6 @@ const styles = StyleSheet.create({
   pauseBar: { width: 4, height: 16, borderRadius: 1 },
   triangle: { width: 0, height: 0, borderTopWidth: 8, borderBottomWidth: 8, borderLeftWidth: 13, borderTopColor: 'transparent', borderBottomColor: 'transparent' },
   track: { height: 3, borderRadius: 2, overflow: 'hidden', marginTop: 4 },
+  allLink: { paddingTop: Spacing.one },
   fill: { height: 3 },
 });

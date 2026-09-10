@@ -18,21 +18,33 @@ export async function isStoredOffline(id: string): Promise<boolean> {
   return info.exists && !info.isDirectory && (info.size ?? 0) > 1024;
 }
 
-/** Downloads one recording for offline playback. Resolves to the local file uri. */
+const RETRY_WAIT_MS = 30000;
+
+/**
+ * Downloads one recording for offline playback. Resolves to the local file uri.
+ * Waits and retries when the server asks us to slow down (429) or hiccups (5xx).
+ */
 export async function storeOffline(rec: Recording, onProgress?: (fraction: number) => void): Promise<string> {
   await FileSystem.makeDirectoryAsync(DIR, { intermediates: true });
   const dest = localUriFor(rec.id);
   const tmp = `${dest}.part`;
-  const task = FileSystem.createDownloadResumable(rec.url, tmp, { headers: MEDIA_HEADERS }, (p) => {
-    if (onProgress && p.totalBytesExpectedToWrite > 0) onProgress(p.totalBytesWritten / p.totalBytesExpectedToWrite);
-  });
-  const result = await task.downloadAsync();
-  if (!result || result.status !== 200) {
+  for (let attempt = 0; ; attempt++) {
+    const task = FileSystem.createDownloadResumable(rec.url, tmp, { headers: MEDIA_HEADERS }, (p) => {
+      if (onProgress && p.totalBytesExpectedToWrite > 0) onProgress(p.totalBytesWritten / p.totalBytesExpectedToWrite);
+    });
+    const result = await task.downloadAsync();
+    if (result && result.status === 200) {
+      await FileSystem.moveAsync({ from: tmp, to: dest });
+      return dest;
+    }
     await FileSystem.deleteAsync(tmp, { idempotent: true });
-    throw new Error(`Download failed (${result?.status ?? 'no response'})`);
+    const status = result?.status ?? 0;
+    if ((status === 429 || status >= 500) && attempt < 3) {
+      await new Promise((resolve) => setTimeout(resolve, RETRY_WAIT_MS * (attempt + 1)));
+      continue;
+    }
+    throw new Error(`Download failed (${status || 'no response'})`);
   }
-  await FileSystem.moveAsync({ from: tmp, to: dest });
-  return dest;
 }
 
 export async function removeOffline(id: string): Promise<void> {

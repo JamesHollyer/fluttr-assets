@@ -1,7 +1,7 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, Pressable, StyleSheet } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
 import { EmptyState } from '@/components/empty-state';
 import { ScreenHeader } from '@/components/screen-header';
@@ -65,14 +65,14 @@ export default function SpeciesScreen() {
           <EmptyState title="No species match" hint="Try a shorter name, or the family, like “warbler”." />
         }
         ListFooterComponent={
-          <Pressable
-            accessibilityRole="link"
-            onPress={() => router.push('/credits')}
-            style={styles.footer}>
-            <ThemedText type="small" style={{ color: theme.accent }}>
-              Photo and data credits
-            </ThemedText>
-          </Pressable>
+          <View style={styles.footer}>
+            <Pressable accessibilityRole="link" onPress={() => router.push('/downloads')} hitSlop={8}>
+              <ThemedText type="small" style={{ color: theme.accent }}>Downloads for offline use</ThemedText>
+            </Pressable>
+            <Pressable accessibilityRole="link" onPress={() => router.push('/credits')} hitSlop={8}>
+              <ThemedText type="small" style={{ color: theme.accent }}>Photo and data credits</ThemedText>
+            </Pressable>
+          </View>
         }
         renderItem={({ item }) => (
           <SpeciesRow
@@ -105,5 +105,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingVertical: Spacing.four,
     alignItems: 'center',
+    gap: Spacing.two,
   },
 });
