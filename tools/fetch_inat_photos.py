@@ -6,14 +6,18 @@ sex when available, plus adult photos of unknown sex to fill.
 Reads:  app/assets/data/species-na.json
 Writes: tools/data/inat-photos.json  {code: [photo, ...]}  (resumable)
 """
-import json, pathlib, time, urllib.error, urllib.parse, urllib.request
+import json, pathlib, threading, time, urllib.error, urllib.parse, urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 PACK = ROOT / "app/assets/data/species-na.json"
 OUT = ROOT / "tools/data/inat-photos.json"
 UA = "FluttrSpeciesPackBuilder/0.3 (bird watching app data build; j.c.hollyer@gmail.com)"
 API = "https://api.inaturalist.org/v1/observations"
-DELAY = 1.05          # iNaturalist asks for at most ~60 requests/minute
+DELAY = 1.05          # iNaturalist asks for at most ~60 requests/minute (shared across workers)
+WORKERS = 2
+_lock = threading.Lock()
+_last = [0.0]
 LICENSES = "cc-by,cc-by-sa,cc-by-nc,cc-by-nc-sa,cc0"
 PER_SEX = 2
 SEX_TERM, FEMALE, MALE = 9, 10, 11
@@ -22,6 +26,11 @@ LICENSE_NAMES = {"cc-by": "CC BY", "cc-by-sa": "CC BY-SA", "cc-by-nc": "CC BY-NC
 
 
 def get(params):
+    with _lock:
+        wait = DELAY - (time.time() - _last[0])
+        if wait > 0:
+            time.sleep(wait)
+        _last[0] = time.time()
     url = API + "?" + urllib.parse.urlencode(params)
     for attempt in range(5):
         try:
@@ -37,37 +46,66 @@ def get(params):
     return {}
 
 
-def query(sci, sex=None, n=PER_SEX):
-    params = {"taxon_name": sci, "quality_grade": "research", "photo_license": LICENSES, "photos": "true",
-              "order_by": "votes", "per_page": n * 2}
-    if sex:
-        params["term_id"] = SEX_TERM
-        params["term_value_id"] = sex
-    else:
-        params["term_id"] = STAGE_TERM
-        params["term_value_id"] = ADULT
-    d = get(params)
-    time.sleep(DELAY)
-    out, seen_users = [], set()
+def photo_from(o, sex):
+    p = (o.get("photos") or [None])[0]
+    if not p or not p.get("url") or not p.get("license_code"):
+        return None
+    dims = p.get("original_dimensions") or {}
+    return {
+        "id": "inat%s" % p["id"],
+        "sex": sex,
+        "url": p["url"].replace("/square.", "/medium."),
+        "width": dims.get("width"),
+        "height": dims.get("height"),
+        "attribution": p.get("attribution"),
+        "license": LICENSE_NAMES.get(p["license_code"], p["license_code"].upper()),
+        "page": "https://www.inaturalist.org/observations/%s" % o["id"],
+    }
+
+
+def observation_sex(o):
+    for a in o.get("annotations") or []:
+        if a.get("controlled_attribute_id") == SEX_TERM:
+            return {MALE: "male", FEMALE: "female"}.get(a.get("controlled_value_id"))
+    return None
+
+
+def query_sexed(sci):
+    """One request for both sexes; the sex comes from each observation's annotations."""
+    d = get({"taxon_name": sci, "quality_grade": "research", "photo_license": LICENSES, "photos": "true",
+             "order_by": "votes", "per_page": 30, "term_id": SEX_TERM, "term_value_id": "%d,%d" % (FEMALE, MALE)})
+    out, per_sex, seen_users = [], {"male": 0, "female": 0}, set()
     for o in d.get("results", []):
-        p = (o.get("photos") or [None])[0]
-        if not p or not p.get("url") or not p.get("license_code"):
+        sex = observation_sex(o)
+        if not sex or per_sex[sex] >= PER_SEX:
             continue
         user = (o.get("user") or {}).get("login")
         if user in seen_users:
-            continue  # spread credit across photographers
+            continue
+        photo = photo_from(o, sex)
+        if not photo:
+            continue
         seen_users.add(user)
-        dims = p.get("original_dimensions") or {}
-        out.append({
-            "id": "inat%s" % p["id"],
-            "sex": {MALE: "male", FEMALE: "female"}.get(sex, "unknown"),
-            "url": p["url"].replace("/square.", "/medium."),
-            "width": dims.get("width"),
-            "height": dims.get("height"),
-            "attribution": p.get("attribution"),
-            "license": LICENSE_NAMES.get(p["license_code"], p["license_code"].upper()),
-            "page": "https://www.inaturalist.org/observations/%s" % o["id"],
-        })
+        per_sex[sex] += 1
+        out.append(photo)
+        if per_sex["male"] >= PER_SEX and per_sex["female"] >= PER_SEX:
+            break
+    return out
+
+
+def query_adults(sci, n):
+    d = get({"taxon_name": sci, "quality_grade": "research", "photo_license": LICENSES, "photos": "true",
+             "order_by": "votes", "per_page": n * 2, "term_id": STAGE_TERM, "term_value_id": ADULT})
+    out, seen_users = [], set()
+    for o in d.get("results", []):
+        user = (o.get("user") or {}).get("login")
+        if user in seen_users:
+            continue
+        photo = photo_from(o, "unknown")
+        if not photo:
+            continue
+        seen_users.add(user)
+        out.append(photo)
         if len(out) >= n:
             break
     return out
@@ -78,11 +116,18 @@ def main():
     done = json.loads(OUT.read_text()) if OUT.exists() else {}
     todo = [s for s in species if s["code"] not in done]
     print("species: %d, done: %d, to fetch: %d" % (len(species), len(done), len(todo)), flush=True)
-    for n, s in enumerate(todo, 1):
-        photos = query(s["sci"], MALE) + query(s["sci"], FEMALE)
+    def work(s):
+        photos = query_sexed(s["sci"])
         if len(photos) < 2:
-            photos += query(s["sci"], None, 2 - len(photos) + 1)
-        done[s["code"]] = photos
+            photos += query_adults(s["sci"], 3 - len(photos))
+        return s["code"], photos
+
+    n = 0
+    with ThreadPoolExecutor(max_workers=WORKERS) as ex:
+      for fut in as_completed([ex.submit(work, s) for s in todo]):
+        code, photos = fut.result()
+        done[code] = photos
+        n += 1
         if n % 100 == 0:
             OUT.write_text(json.dumps(done, ensure_ascii=False))
             both = sum(1 for v in done.values() if {p["sex"] for p in v} >= {"male", "female"})
