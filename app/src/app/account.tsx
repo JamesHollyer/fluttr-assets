@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/button';
@@ -7,11 +8,14 @@ import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { getMyProfile, saveMyProfile } from '@/lib/friends';
+import { supabase } from '@/lib/supabase';
 import { useSync } from '@/lib/sync/use-sync';
 import { formatDateTime } from '@/lib/format';
 
 export default function AccountScreen() {
   const theme = useTheme();
+  const router = useRouter();
   const auth = useAuth();
   const sync = useSync();
   const [email, setEmail] = useState('');
@@ -19,8 +23,24 @@ export default function AccountScreen() {
   const [step, setStep] = useState<'email' | 'code'>('email');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [username, setUsername] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [savedUsername, setSavedUsername] = useState<string | null>(null);
+  const [devPassword, setDevPassword] = useState('');
 
   const inputStyle = [styles.input, { backgroundColor: theme.backgroundElement, color: theme.text, borderColor: theme.border }];
+
+  const userId = auth.user?.id;
+  useEffect(() => {
+    if (!supabase || !userId) return;
+    getMyProfile(supabase, userId)
+      .then((p) => {
+        setUsername(p?.username ?? '');
+        setDisplayName(p?.displayName ?? '');
+        setSavedUsername(p?.username ?? null);
+      })
+      .catch(() => {});
+  }, [userId]);
 
   async function run(action: () => Promise<void>, done?: string) {
     setBusy(true);
@@ -72,6 +92,40 @@ export default function AccountScreen() {
             Catches are saved on this phone first and uploaded whenever you have a connection, so
             you can keep catching birds with no signal.
           </ThemedText>
+
+          <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
+            <ThemedText type="smallBold">Profile</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              Friends find you by username. Letters, numbers, and underscores.
+            </ThemedText>
+            <TextInput
+              style={inputStyle}
+              placeholder="username"
+              placeholderTextColor={theme.textSecondary}
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={username}
+              onChangeText={(t) => setUsername(t.toLowerCase())}
+              maxLength={20}
+            />
+            <TextInput
+              style={inputStyle}
+              placeholder="Display name (optional)"
+              placeholderTextColor={theme.textSecondary}
+              value={displayName}
+              onChangeText={setDisplayName}
+              maxLength={40}
+            />
+            <Button
+              title={savedUsername ? 'Save profile' : 'Choose username'}
+              loading={busy}
+              disabled={username.trim().length < 3}
+              onPress={() => run(() => saveMyProfile(supabase!, userId!, username, displayName).then(() => setSavedUsername(username.trim().toLowerCase())), 'Profile saved.')}
+            />
+            {savedUsername ? (
+              <Button title="Friends" variant="secondary" onPress={() => router.push('/friends')} />
+            ) : null}
+          </View>
           <Button title="Sync now" variant="secondary" loading={sync.status === 'syncing'} onPress={() => sync.syncNow().catch(console.error)} />
           <Button title="Sign out" variant="destructive" onPress={() => run(auth.signOut)} />
           {message ? <ThemedText type="small" style={{ color: theme.danger }}>{message}</ThemedText> : null}
@@ -128,6 +182,22 @@ export default function AccountScreen() {
           </>
         )}
         {message ? <ThemedText type="small" themeColor="textSecondary">{message}</ThemedText> : null}
+        {__DEV__ ? (
+          <View style={[styles.card, { backgroundColor: theme.backgroundElement }]}>
+            <ThemedText type="smallBold">Development: password sign-in</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">For test accounts only; not shown in release builds.</ThemedText>
+            <TextInput
+              style={inputStyle}
+              placeholder="password"
+              placeholderTextColor={theme.textSecondary}
+              secureTextEntry
+              autoCapitalize="none"
+              value={devPassword}
+              onChangeText={setDevPassword}
+            />
+            <Button title="Sign in with password" variant="secondary" loading={busy} disabled={!email.includes('@') || !devPassword} onPress={() => run(() => auth.signInWithPassword(email, devPassword))} />
+          </View>
+        ) : null}
       </ScrollView>
     </ThemedView>
   );

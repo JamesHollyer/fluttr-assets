@@ -13,6 +13,8 @@ type AuthState = {
   /** Emails a sign-in link that opens the app (and a code, when the mail template includes one). */
   sendCode: (email: string) => Promise<void>;
   verifyCode: (email: string, code: string) => Promise<void>;
+  /** Development builds only: password sign-in for test accounts. */
+  signInWithPassword: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -93,6 +95,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
   }, []);
 
+  const signInWithPassword = useCallback(async (email: string, password: string) => {
+    if (!supabase) throw new Error('Sync is not set up in this build.');
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    if (error) throw error;
+  }, []);
+
   const signOut = useCallback(async () => {
     if (!supabase) return;
     const { error } = await supabase.auth.signOut();
@@ -100,8 +108,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<AuthState>(
-    () => ({ configured: Boolean(supabase), loading, session, user: session?.user ?? null, sendCode, verifyCode, signOut }),
-    [loading, session, sendCode, verifyCode, signOut],
+    () => ({ configured: Boolean(supabase), loading, session, user: session?.user ?? null, sendCode, verifyCode, signInWithPassword, signOut }),
+    [loading, session, sendCode, verifyCode, signInWithPassword, signOut],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

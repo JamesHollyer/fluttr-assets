@@ -71,6 +71,14 @@ export default function LifeListScreen() {
                 </ThemedText>
               </Pressable>
             ) : null}
+            {auth.user ? (
+              <Pressable accessibilityRole="button" onPress={() => router.push('/friends')} style={styles.accountRow}>
+                <ThemedText type="small" themeColor="textSecondary" style={styles.accountText}>
+                  See what your friends have caught
+                </ThemedText>
+                <ThemedText type="smallBold" style={{ color: theme.accent }}>Friends</ThemedText>
+              </Pressable>
+            ) : null}
           </ScreenHeader>
         }
         ListEmptyComponent={
