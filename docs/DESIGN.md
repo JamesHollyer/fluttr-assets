@@ -52,6 +52,10 @@ The pitch in one line: *Merlin's identification, Pokémon's collecting, Strava's
 - **Friends, first slice.** Profiles gained a unique **username** (3–20 lowercase letters, digits, underscores; enforced by a database check) and an optional display name, set from the Account screen. A `friendships` table (requester, addressee, pending / accepted / blocked) with row-level security implements request → accept; either party can remove. Search is a username prefix match over profiles, so people are discoverable by username only. Friends' life lists are served by a `security definer` function that returns species code, catch count, and first / last dates, never locations or notes, and refuses unless the two users are accepted friends. The friend's list is joined against the local species table for names and thumbnails and marks species the viewer has also caught. Feed, congratulations, comments, and notifications remain for the rest of Phase 4.
 - Development builds carry a password sign-in on the Account screen (hidden in release builds) so test accounts can be used without email. Two test accounts exist in the Supabase project (`wren_tester` with twelve seeded catches, `finch_dev`); they should be deleted before launch.
 
+**2026-09-11**
+- The tab bar shows labels on every tab on Android (as iOS already did) and uses platform icons: SF Symbols on iOS, Material Symbols on Android (bird, question card, waveform, checklist).
+- **Logo: the Owl birder.** After five rounds of studies (whole birds, wings, binoculars, birds holding binoculars; all kept as SVGs in `docs/logo-studies/`), the user chose an owl, face on, whose eyes are a pair of binoculars held up by two raised wings, with a gold beak and toes, white on the app green. It is the app icon (iOS, Android adaptive with a monochrome layer), the splash mark, and the favicon; sources are in `app/assets/brand/`. The single-wing "Broadwing" family was the runner-up and may return as a secondary mark. The user expects to revisit and refine the owl later.
+
 ### Goals
 
 1. Identify birds by sound in near real time, and by a short series of questions.

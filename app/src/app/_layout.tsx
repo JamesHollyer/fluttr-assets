@@ -4,7 +4,7 @@ import { SQLiteProvider } from 'expo-sqlite';
 import { Suspense } from 'react';
 import { ActivityIndicator, useColorScheme } from 'react-native';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { SplashOverlay } from '@/components/splash-overlay';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { DATABASE_NAME, migrateDbIfNeeded } from '@/db/database';
@@ -39,7 +39,7 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={navTheme}>
-      <AnimatedSplashOverlay />
+      <SplashOverlay />
       <Suspense fallback={<Loading />}>
         <SQLiteProvider databaseName={DATABASE_NAME} onInit={migrateDbIfNeeded} useSuspense>
           <AuthProvider>
