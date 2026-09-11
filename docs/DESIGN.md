@@ -1,6 +1,6 @@
 # Social Bird Watching App — Design Document
 
-**Status:** Draft v0.9 (2026-09-10)
+**Status:** Draft v1.0 (2026-09-10)
 **Name:** Fluttr (working title)
 **Platforms:** iOS, Android, Web
 
@@ -49,6 +49,8 @@ The pitch in one line: *Merlin's identification, Pokémon's collecting, Strava's
 - Later the same day the user created a **Xeno-canto** account. Its API (v3, key kept in `tools/.env`, never committed) is now the primary sound source: MP3 originals only (some uploads are WAV), quality C or better, 3–120 s, up to six per species mixing songs and calls, with Commons filling gaps. Xeno-canto clips are almost all CC BY-NC-SA or BY-NC-ND, which is fine for a free app with credits and must be revisited before any monetization.
 - A **Downloads** screen holds the offline packs: "Bird sounds · United States & Canada" is the three shortest clips per species (about 1,000 clips, roughly 700 MB at source bitrates), downloadable with pause and resume; the Sound ID model's status; photos as a later pack. A server-built pack with trimmed, re-encoded clips would be several times smaller.
 - After a successful field test the user asked for **male and female photos**, since many species differ sharply. Source: **iNaturalist** research-grade observations annotated with sex (controlled term 9: Female 10 / Male 11), Creative Commons photos only, most-voted first, two per sex per species, spread across photographers; adult photos of unknown sex fill in where a sex is missing. Species pages show a swipeable gallery with Male / Female chips and per-photo credits; the Wikipedia lead photo stays as the last slide. Photos stream at 500 px from iNaturalist's open-data bucket until the photo pack exists.
+- **Friends, first slice.** Profiles gained a unique **username** (3–20 lowercase letters, digits, underscores; enforced by a database check) and an optional display name, set from the Account screen. A `friendships` table (requester, addressee, pending / accepted / blocked) with row-level security implements request → accept; either party can remove. Search is a username prefix match over profiles, so people are discoverable by username only. Friends' life lists are served by a `security definer` function that returns species code, catch count, and first / last dates, never locations or notes, and refuses unless the two users are accepted friends. The friend's list is joined against the local species table for names and thumbnails and marks species the viewer has also caught. Feed, congratulations, comments, and notifications remain for the rest of Phase 4.
+- Development builds carry a password sign-in on the Account screen (hidden in release builds) so test accounts can be used without email. Two test accounts exist in the Supabase project (`wren_tester` with twelve seeded catches, `finch_dev`); they should be deleted before launch.
 
 ### Goals
 
@@ -374,8 +376,8 @@ Rule engine, ~30 launch badges, celebration UI, badge showcase.
 **Phase 3b — Accounts and sync** (done)
 Supabase project, email sign-in, local-first sync of catches. Prerequisite for badges shared across devices and for friends.
 
-**Phase 4 — Friends**
-Friend requests, feed, congratulate, comments, notifications, privacy controls, sensitive species.
+**Phase 4 — Friends** (in progress)
+Friend requests and friends' life lists are done. Remaining: feed, congratulate, comments, notifications, privacy controls, sensitive species.
 
 **Phase 5 — Hardening & launch**
 Store submissions, PWA polish, analytics, moderation tooling, load test the inference path.
