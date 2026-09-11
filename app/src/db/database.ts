@@ -159,6 +159,7 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase): Promise<void> {
         id           TEXT PRIMARY KEY NOT NULL,
         species_code TEXT NOT NULL REFERENCES species (code),
         sex          TEXT NOT NULL DEFAULT 'unknown',
+        photographer TEXT,
         url          TEXT NOT NULL,
         width        INTEGER,
         height       INTEGER,
@@ -169,6 +170,15 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase): Promise<void> {
       CREATE INDEX IF NOT EXISTS species_photos_species ON species_photos (species_code);
     `);
     await db.execAsync('PRAGMA user_version = 6;');
+  }
+
+  if (version < 7) {
+    // Photographer name on photos. Version 6 databases created the table without it.
+    const cols = await db.getAllAsync<{ name: string }>('PRAGMA table_info(species_photos)');
+    if (!cols.some((c) => c.name === 'photographer')) {
+      await db.execAsync('ALTER TABLE species_photos ADD COLUMN photographer TEXT;');
+    }
+    await db.execAsync('PRAGMA user_version = 7;');
   }
 
   await seedSpeciesPack(db);
@@ -323,6 +333,7 @@ type PackPhoto = {
   code: string;
   id: string;
   sex: string;
+  by?: string | null;
   url: string;
   width?: number | null;
   height?: number | null;
@@ -343,9 +354,9 @@ async function seedPhotosPack(db: SQLiteDatabase): Promise<void> {
     for (let i = 0; i < rows.length; i += BATCH) {
       const chunk = rows.slice(i, i + BATCH);
       await tx.runAsync(
-        `INSERT OR REPLACE INTO species_photos (id, species_code, sex, url, width, height, attribution, license, page_url)
-         VALUES ${chunk.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ')}`,
-        chunk.flatMap((p) => [p.id, p.code, p.sex, p.url, p.width ?? null, p.height ?? null, p.attribution ?? null, p.license ?? null, p.page ?? null]),
+        `INSERT OR REPLACE INTO species_photos (id, species_code, sex, photographer, url, width, height, attribution, license, page_url)
+         VALUES ${chunk.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ')}`,
+        chunk.flatMap((p) => [p.id, p.code, p.sex, p.by ?? null, p.url, p.width ?? null, p.height ?? null, p.attribution ?? null, p.license ?? null, p.page ?? null]),
       );
     }
     await tx.runAsync(

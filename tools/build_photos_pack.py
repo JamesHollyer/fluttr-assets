@@ -7,7 +7,11 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 SRC = ROOT / "tools/data/inat-photos.json"
 OUT = ROOT / "app/assets/data/photos-na.json"
 data = json.loads(SRC.read_text()) if SRC.exists() else {}
-rows = [{"code": code, **p} for code, photos in data.items() for p in (photos or [])]
+ORDER = {"male": 0, "female": 1, "unknown": 2}
+rows = []
+for code, photos in data.items():
+    ordered = sorted(photos or [], key=lambda p: (ORDER.get(p["sex"], 3), -max(p.get("width") or 0, p.get("height") or 0)))
+    rows += [{"code": code, **{k: v for k, v in p.items() if k != "faves"}} for p in ordered]
 pack = {"id": "na", "version": 1, "generated": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "source": "iNaturalist (per-photo license)", "photos": rows}
 OUT.write_text(json.dumps(pack, separators=(",", ":"), ensure_ascii=False))

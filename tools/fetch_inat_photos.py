@@ -51,9 +51,12 @@ def photo_from(o, sex):
     if not p or not p.get("url") or not p.get("license_code"):
         return None
     dims = p.get("original_dimensions") or {}
+    user = o.get("user") or {}
     return {
         "id": "inat%s" % p["id"],
         "sex": sex,
+        "by": user.get("name") or user.get("login"),
+        "faves": o.get("faves_count") or 0,
         "url": p["url"].replace("/square.", "/medium."),
         "width": dims.get("width"),
         "height": dims.get("height"),
@@ -70,41 +73,47 @@ def observation_sex(o):
     return None
 
 
+MIN_LONG_SIDE = 1500  # smaller originals are usually old scans or crops; prefer sharper ones
+
+
+def rank_key(photo):
+    """Sharp-enough photos first, then by community favourites, then by size."""
+    long_side = max(photo.get("width") or 0, photo.get("height") or 0)
+    return (0 if long_side >= MIN_LONG_SIDE else 1, -(photo.get("faves") or 0), -long_side)
+
+
 def query_sexed(sci):
     """One request for both sexes; the sex comes from each observation's annotations."""
     d = get({"taxon_name": sci, "quality_grade": "research", "photo_license": LICENSES, "photos": "true",
-             "order_by": "votes", "per_page": 30, "term_id": SEX_TERM, "term_value_id": "%d,%d" % (FEMALE, MALE)})
-    out, per_sex, seen_users = [], {"male": 0, "female": 0}, set()
+             "order_by": "votes", "per_page": 40, "term_id": SEX_TERM, "term_value_id": "%d,%d" % (FEMALE, MALE)})
+    candidates = {"male": [], "female": []}
     for o in d.get("results", []):
         sex = observation_sex(o)
-        if not sex or per_sex[sex] >= PER_SEX:
-            continue
-        user = (o.get("user") or {}).get("login")
-        if user in seen_users:
-            continue
-        photo = photo_from(o, sex)
-        if not photo:
-            continue
-        seen_users.add(user)
-        per_sex[sex] += 1
-        out.append(photo)
-        if per_sex["male"] >= PER_SEX and per_sex["female"] >= PER_SEX:
-            break
+        photo = photo_from(o, sex) if sex else None
+        if photo:
+            candidates[sex].append(photo)
+    out = []
+    for sex in ("male", "female"):
+        seen_users = set()
+        for photo in sorted(candidates[sex], key=rank_key):
+            if photo["by"] in seen_users:
+                continue
+            seen_users.add(photo["by"])
+            out.append(photo)
+            if sum(1 for x in out if x["sex"] == sex) >= PER_SEX:
+                break
     return out
 
 
 def query_adults(sci, n):
     d = get({"taxon_name": sci, "quality_grade": "research", "photo_license": LICENSES, "photos": "true",
-             "order_by": "votes", "per_page": n * 2, "term_id": STAGE_TERM, "term_value_id": ADULT})
+             "order_by": "votes", "per_page": 20, "term_id": STAGE_TERM, "term_value_id": ADULT})
+    candidates = [x for x in (photo_from(o, "unknown") for o in d.get("results", [])) if x]
     out, seen_users = [], set()
-    for o in d.get("results", []):
-        user = (o.get("user") or {}).get("login")
-        if user in seen_users:
+    for photo in sorted(candidates, key=rank_key):
+        if photo["by"] in seen_users:
             continue
-        photo = photo_from(o, "unknown")
-        if not photo:
-            continue
-        seen_users.add(user)
+        seen_users.add(photo["by"])
         out.append(photo)
         if len(out) >= n:
             break
@@ -112,8 +121,15 @@ def query_adults(sci, n):
 
 
 def main():
+    import sys
     species = json.loads(PACK.read_text())["species"]
     done = json.loads(OUT.read_text()) if OUT.exists() else {}
+    if "--refresh-top" in sys.argv:
+        # Re-pick the most-reported US/CA species with the current ranking rules.
+        n = int(sys.argv[sys.argv.index("--refresh-top") + 1])
+        usca = sorted((s for s in species if s.get("freq", {}).get("usca", 0) >= 200), key=lambda s: -s["freq"]["usca"])
+        for s in usca[:n]:
+            done.pop(s["code"], None)
     todo = [s for s in species if s["code"] not in done]
     print("species: %d, done: %d, to fetch: %d" % (len(species), len(done), len(todo)), flush=True)
     def work(s):

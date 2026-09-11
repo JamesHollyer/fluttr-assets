@@ -6,6 +6,7 @@ export type SpeciesPhotoRow = {
   id: string;
   speciesCode: string;
   sex: PhotoSex;
+  photographer: string | null;
   url: string;
   width: number | null;
   height: number | null;
@@ -16,7 +17,7 @@ export type SpeciesPhotoRow = {
 
 export async function listSpeciesPhotos(db: SQLiteDatabase, speciesCode: string): Promise<SpeciesPhotoRow[]> {
   return db.getAllAsync<SpeciesPhotoRow>(
-    `SELECT id, species_code AS speciesCode, sex, url, width, height, attribution, license, page_url AS pageUrl
+    `SELECT id, species_code AS speciesCode, sex, photographer, url, width, height, attribution, license, page_url AS pageUrl
      FROM species_photos WHERE species_code = ?
      ORDER BY CASE sex WHEN 'male' THEN 0 WHEN 'female' THEN 1 ELSE 2 END, rowid`,
     speciesCode,

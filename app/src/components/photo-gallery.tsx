@@ -46,7 +46,7 @@ export function PhotoGallery(species: Props) {
           sex: r.sex,
           url: r.url,
           ratio: r.width && r.height ? r.width / r.height : 4 / 3,
-          credit: [r.attribution?.replace(/^\(c\)\s*/, '').replace(/,\s*some rights reserved.*$/i, ''), r.license].filter(Boolean).join(' · '),
+          credit: [r.photographer ?? r.attribution?.replace(/^\(c\)\s*/, '').replace(/,\s*(some|no) rights reserved.*$/i, ''), r.license].filter(Boolean).join(' · '),
           page: r.pageUrl,
         }));
         const lead: Slide[] = species.imageUrl
