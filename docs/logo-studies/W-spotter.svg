@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="color:#2F5F4E">
+<title>Fluttr mark W: Spotter</title>
+<path d="M18 60 L2 42 L16 72 Z" fill="currentColor"/>
+<ellipse cx="42" cy="62" rx="26" ry="20" fill="currentColor"/>
+<path d="M36 82 L34 93 M48 82 L50 93" stroke="currentColor" stroke-width="4" stroke-linecap="round" fill="none"/>
+<circle cx="62" cy="40" r="16" fill="currentColor"/>
+<rect x="70" y="31" width="27" height="10" rx="5" fill="currentColor" stroke="#FFFFFF" stroke-width="2.5"/>
+<rect x="70" y="43" width="27" height="10" rx="5" fill="currentColor" stroke="#FFFFFF" stroke-width="2.5"/>
+<ellipse cx="58" cy="60" rx="7" ry="15" transform="rotate(-45 58 60)" fill="currentColor" stroke="#FFFFFF" stroke-width="2.5"/>
+<circle cx="93" cy="36" r="2.2" fill="#FFFFFF"/><circle cx="93" cy="48" r="2.2" fill="#FFFFFF"/>
+</svg>

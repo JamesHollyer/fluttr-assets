@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="color:#2F5F4E">
+<title>Fluttr mark T: Broadwing, feathered</title>
+<g stroke-linecap="round" fill="none">
+  <path d="M14 72 L50 86" stroke="#FFFFFF" stroke-width="15"/><path d="M14 72 L50 86" stroke="currentColor" stroke-width="10"/>
+  <path d="M14 72 L70 78" stroke="#FFFFFF" stroke-width="15"/><path d="M14 72 L70 78" stroke="currentColor" stroke-width="10"/>
+  <path d="M14 72 L86 62" stroke="#FFFFFF" stroke-width="15"/><path d="M14 72 L86 62" stroke="currentColor" stroke-width="10"/>
+  <path d="M14 72 L94 44" stroke="#FFFFFF" stroke-width="15"/><path d="M14 72 L94 44" stroke="currentColor" stroke-width="10"/>
+  <path d="M14 72 L90 26" stroke="#FFFFFF" stroke-width="15"/><path d="M14 72 L90 26" stroke="currentColor" stroke-width="10"/>
+</g>
+<path d="M8 76 C12 46 36 28 74 26 C58 36 40 50 24 74 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="5" stroke-linejoin="round"/>
+<path d="M8 76 C12 46 36 28 74 26 C58 36 40 50 24 74 Z" fill="currentColor"/>
+</svg>
