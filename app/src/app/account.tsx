@@ -139,7 +139,7 @@ export default function AccountScreen() {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <ThemedText type="subtitle">Sign in</ThemedText>
         <ThemedText themeColor="textSecondary">
-          Back up your catches and, later, share them with friends. We email you a sign-in link; no password.
+          Back up your catches and share them with friends. We email you a 6-digit code; no password to remember.
         </ThemedText>
         {step === 'email' ? (
           <>
@@ -155,21 +155,20 @@ export default function AccountScreen() {
               onChangeText={setEmail}
             />
             <Button
-              title="Email me a sign-in link"
+              title="Email me a code"
               loading={busy}
               disabled={!email.includes('@')}
-              onPress={() => run(() => auth.sendCode(email).then(() => setStep('code')), 'Sent. Open the email on this phone and tap the link.')}
+              onPress={() => run(() => auth.sendCode(email).then(() => setStep('code')), 'Sent. Check your email for the code.')}
             />
           </>
         ) : (
           <>
             <ThemedText type="small" themeColor="textSecondary">
-              Sent to {email.trim()}. Open the email on this phone and tap the link; you will come straight back here signed in.
+              Enter the code we emailed to {email.trim()}. Tapping the link in the email works too.
             </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">Or, if the email shows a code, enter it:</ThemedText>
             <TextInput
               style={inputStyle}
-              placeholder="12345678"
+              placeholder="123456"
               placeholderTextColor={theme.textSecondary}
               keyboardType="number-pad"
               autoComplete="one-time-code"
@@ -177,7 +176,8 @@ export default function AccountScreen() {
               onChangeText={setCode}
               maxLength={10}
             />
-            <Button title="Sign in with code" variant="secondary" loading={busy} disabled={code.trim().length < 6} onPress={() => run(() => auth.verifyCode(email, code))} />
+            <Button title="Sign in" loading={busy} disabled={code.trim().length < 6} onPress={() => run(() => auth.verifyCode(email, code))} />
+            <Button title="Send a new code" variant="secondary" loading={busy} onPress={() => run(() => auth.sendCode(email), 'Sent again. Codes expire after 10 minutes.')} />
             <Button title="Use a different email" variant="secondary" onPress={() => { setStep('email'); setCode(''); setMessage(null); }} />
           </>
         )}
