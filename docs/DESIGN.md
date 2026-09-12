@@ -56,6 +56,9 @@ The pitch in one line: *Merlin's identification, Pokémon's collecting, Strava's
 - The tab bar shows labels on every tab on Android (as iOS already did) and uses platform icons: SF Symbols on iOS, Material Symbols on Android (bird, question card, waveform, checklist).
 - **Logo: the Owl birder.** After five rounds of studies (whole birds, wings, binoculars, birds holding binoculars; all kept as SVGs in `docs/logo-studies/`), the user chose an owl, face on, whose eyes are a pair of binoculars held up by two raised wings, with a gold beak and toes, white on the app green. It is the app icon (iOS, Android adaptive with a monochrome layer), the splash mark, and the favicon; sources are in `app/assets/brand/`. The single-wing "Broadwing" family was the runner-up and may return as a secondary mark. The user expects to revisit and refine the owl later.
 
+**2026-09-12**
+- Sign-in is **code first**: the email carries a 6-digit code in its subject and body, and the app asks for the code, with the magic link kept as a fallback. Codes work from any mail app; the link only worked from Chrome. This needs custom SMTP, since Supabase's built-in mailer (2 emails/hour) cannot send codes. For now mail goes out through the user's own Gmail with an app password; a branded sender such as accounts@fluttr.com waits until the project has a domain, which would also enable https app links.
+
 ### Goals
 
 1. Identify birds by sound in near real time, and by a short series of questions.
