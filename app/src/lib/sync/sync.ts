@@ -1,3 +1,5 @@
+import { applyRemoteBadge, listUnsyncedBadges, markBadgesSynced } from '@/db/badges';
+import { checkBadges } from '@/lib/badges';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
@@ -74,6 +76,20 @@ export async function syncOnce(db: SQLiteDatabase, supabase: SupabaseClient, use
     }
     if (page.length < PAGE) break;
   }
+
+  // Badges: push the ones earned here, pull the ones earned elsewhere, then re-check.
+  const badgesPending = await listUnsyncedBadges(db);
+  if (badgesPending.length) {
+    const { error } = await supabase
+      .from('badges')
+      .upsert(badgesPending.map((b) => ({ user_id: userId, badge_id: b.badgeId, earned_at: b.earnedAt })), { onConflict: 'user_id,badge_id', ignoreDuplicates: true });
+    if (error) throw new Error(`Badge upload failed: ${error.message}`);
+    await markBadgesSynced(db, badgesPending.map((b) => b.badgeId));
+  }
+  const remoteBadges = await supabase.from('badges').select('badge_id, earned_at').eq('user_id', userId);
+  if (remoteBadges.error) throw new Error(`Badge download failed: ${remoteBadges.error.message}`);
+  for (const b of remoteBadges.data ?? []) await applyRemoteBadge(db, b.badge_id, b.earned_at);
+  await checkBadges(db);
 
   return { pushed: pending.length, pulled };
 }

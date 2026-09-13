@@ -21,6 +21,7 @@ export default function FriendLifeListScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [entries, setEntries] = useState<Entry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [badgeCount, setBadgeCount] = useState<number | null>(null);
 
   useEffect(() => {
     const client = supabase;
@@ -28,6 +29,8 @@ export default function FriendLifeListScreen() {
     const run = async () => {
       const { data } = await client.from('profiles').select('id, username, display_name').eq('id', id).maybeSingle();
       if (data) setProfile({ id: data.id, username: data.username, displayName: data.display_name });
+      const badges = await client.from('badges').select('badge_id', { count: 'exact', head: true }).eq('user_id', id);
+      setBadgeCount(badges.count ?? 0);
       const list = await fetchFriendLifeList(client, id);
       if (list.length === 0) {
         setEntries([]);
@@ -74,7 +77,7 @@ export default function FriendLifeListScreen() {
             subtitle={
               entries === null
                 ? 'Loading…'
-                : `${entries.length} species · ${youLack} you haven't caught`
+                : `${entries.length} species · ${youLack} you haven't caught${badgeCount ? ` · ${badgeCount} ${badgeCount === 1 ? 'badge' : 'badges'}` : ''}`
             }
           />
         }

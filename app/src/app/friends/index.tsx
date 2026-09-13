@@ -1,4 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
+import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
@@ -10,6 +11,7 @@ import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { checkBadges, recordFriendCount } from '@/lib/badges';
 import {
   acceptFriendRequest,
   getMyProfile,
@@ -34,6 +36,7 @@ export default function FriendsScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const [hasUsername, setHasUsername] = useState<boolean | null>(null);
+  const db = useSQLiteContext();
   const [entries, setEntries] = useState<FriendEntry[]>([]);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Profile[]>([]);
@@ -45,7 +48,9 @@ export default function FriendsScreen() {
     const [profile, list] = await Promise.all([getMyProfile(supabase, user.id), listFriendships(supabase, user.id)]);
     setHasUsername(Boolean(profile?.username));
     setEntries(list);
-  }, [user]);
+    await recordFriendCount(db, list.filter((e) => e.relation === 'friend').length);
+    await checkBadges(db);
+  }, [user, db]);
 
   useFocusEffect(
     useCallback(() => {

@@ -181,6 +181,17 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase): Promise<void> {
     await db.execAsync('PRAGMA user_version = 7;');
   }
 
+  if (version < 8) {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS badges_earned (
+        badge_id  TEXT PRIMARY KEY NOT NULL,
+        earned_at TEXT NOT NULL,
+        synced_at TEXT
+      );
+    `);
+    await db.execAsync('PRAGMA user_version = 8;');
+  }
+
   await seedSpeciesPack(db);
   await seedRecordingsPack(db);
   await seedPhotosPack(db);

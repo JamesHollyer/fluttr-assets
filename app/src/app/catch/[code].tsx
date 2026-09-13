@@ -12,6 +12,7 @@ import { addSighting, type CatchResult } from '@/db/sightings';
 import { getSpecies, type SpeciesWithCount } from '@/db/species';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
+import { checkBadges, type Badge } from '@/lib/badges';
 import { captureLocation, type Coords } from '@/lib/location';
 import { requestSync } from '@/lib/sync/sync';
 
@@ -29,6 +30,7 @@ export default function CatchScreen() {
   const [location, setLocation] = useState<LocationState>({ status: 'finding' });
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<CatchResult | null>(null);
+  const [newBadges, setNewBadges] = useState<Badge[]>([]);
 
   useEffect(() => {
     getSpecies(db, code).then(setSpecies).catch(console.error);
@@ -59,6 +61,8 @@ export default function CatchScreen() {
         lng: coords?.lng ?? null,
         method: method === 'sound' || method === 'wizard' ? method : 'manual',
       });
+      const earned = await checkBadges(db).catch(() => [] as Badge[]);
+      setNewBadges(earned);
       setResult(saved);
       requestSync();
     } catch (err) {
@@ -78,6 +82,7 @@ export default function CatchScreen() {
           commonName={species.commonName}
           isLifer={result.isLifer}
           catchNumber={result.catchNumber}
+          badges={newBadges}
           onDone={() => router.back()}
         />
       </ThemedView>

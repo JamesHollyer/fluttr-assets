@@ -16,11 +16,13 @@ import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import type { Badge } from '@/lib/badges';
 
 type Props = {
   commonName: string;
   isLifer: boolean;
   catchNumber: number;
+  badges?: Badge[];
   onDone: () => void;
 };
 
@@ -95,7 +97,7 @@ function Particle({ spec, animate }: { spec: ParticleSpec; animate: boolean }) {
   );
 }
 
-export function CatchCelebration({ commonName, isLifer, catchNumber, onDone }: Props) {
+export function CatchCelebration({ commonName, isLifer, catchNumber, badges = [], onDone }: Props) {
   const theme = useTheme();
   const reducedMotion = useReducedMotion();
   const animate = !reducedMotion;
@@ -186,6 +188,23 @@ export function CatchCelebration({ commonName, isLifer, catchNumber, onDone }: P
         </ThemedText>
       </Animated.View>
 
+      {badges.length ? (
+        <Animated.View style={[styles.badges, buttonStyle]}>
+          <ThemedText type="small" themeColor="textSecondary" style={styles.center_text}>
+            {badges.length === 1 ? 'BADGE EARNED' : 'BADGES EARNED'}
+          </ThemedText>
+          {badges.map((b) => (
+            <View key={b.id} style={[styles.badgeRow, { backgroundColor: theme.highlightSoft }]}>
+              <ThemedText style={styles.badgeGlyph}>{b.glyph}</ThemedText>
+              <View style={styles.badgeCopy}>
+                <ThemedText type="smallBold">{b.name}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">{b.description}</ThemedText>
+              </View>
+            </View>
+          ))}
+        </Animated.View>
+      ) : null}
+
       <Animated.View style={[styles.done, buttonStyle]}>
         <Button title="Done" onPress={onDone} />
       </Animated.View>
@@ -243,5 +262,24 @@ const styles = StyleSheet.create({
   },
   done: {
     alignSelf: 'stretch',
+  },
+  badges: {
+    alignSelf: 'stretch',
+    gap: Spacing.two,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    padding: Spacing.three,
+    borderRadius: Spacing.three,
+  },
+  badgeGlyph: {
+    fontSize: 28,
+    lineHeight: 34,
+  },
+  badgeCopy: {
+    flex: 1,
+    gap: 2,
   },
 });

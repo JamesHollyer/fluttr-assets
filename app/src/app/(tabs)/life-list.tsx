@@ -9,7 +9,9 @@ import { SpeciesRow } from '@/components/species-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { countEarnedBadges } from '@/db/badges';
 import { getLifeList, getStats, type LifeListEntry } from '@/db/sightings';
+import { BADGES } from '@/lib/badges';
 import { useTheme } from '@/hooks/use-theme';
 import { useAuth } from '@/lib/auth';
 import { formatDate } from '@/lib/format';
@@ -23,17 +25,21 @@ export default function LifeListScreen() {
   const sync = useSync();
   const [entries, setEntries] = useState<LifeListEntry[]>([]);
   const [stats, setStats] = useState({ species: 0, catches: 0 });
+  const [earnedBadges, setEarnedBadges] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
-      Promise.all([getLifeList(db), getStats(db)])
-        .then(([list, s]) => {
+      Promise.all([getLifeList(db), getStats(db), countEarnedBadges(db)])
+        .then(([list, s, badges]) => {
           setEntries(list);
           setStats(s);
+          setEarnedBadges(badges);
         })
         .catch(console.error);
     }, [db]),
   );
+
+  const badgeLine = earnedBadges === 0 ? `Earn badges as you bird · 0 of ${BADGES.length}` : `${earnedBadges} of ${BADGES.length} badges earned`;
 
   const subtitle =
     stats.species === 0
@@ -71,6 +77,12 @@ export default function LifeListScreen() {
                 </ThemedText>
               </Pressable>
             ) : null}
+            <Pressable accessibilityRole="button" onPress={() => router.push('/badges')} style={styles.accountRow}>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.accountText}>
+                {badgeLine}
+              </ThemedText>
+              <ThemedText type="smallBold" style={{ color: theme.accent }}>Badges</ThemedText>
+            </Pressable>
             {auth.user ? (
               <Pressable accessibilityRole="button" onPress={() => router.push('/friends')} style={styles.accountRow}>
                 <ThemedText type="small" themeColor="textSecondary" style={styles.accountText}>
