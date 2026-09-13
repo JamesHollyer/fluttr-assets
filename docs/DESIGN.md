@@ -58,6 +58,7 @@ The pitch in one line: *Merlin's identification, Pokémon's collecting, Strava's
 
 **2026-09-12**
 - Sign-in is **code first**: the email carries a 6-digit code in its subject and body, and the app asks for the code, with the magic link kept as a fallback. Codes work from any mail app; the link only worked from Chrome. This needs custom SMTP, since Supabase's built-in mailer (2 emails/hour) cannot send codes. For now mail goes out through the user's own Gmail with an app password; a branded sender such as accounts@fluttr.com waits until the project has a domain, which would also enable https app links.
+- **Badges shipped** (Phase 3). 49 badges in seven groups: life-list milestones (1 to 500 species), catch counts, repeat catches and big days, streaks, seasons and months, Sound ID and wizard skill tiers, family counts, a colors badge, ten bird-group badges (raptors, owls, warblers, sparrows, waterfowl, gulls, woodpeckers, hummingbirds, corvids, shorebirds, waders), moments (early bird, night owl, rare find, vagrant, introduced species), and friend counts. Rules are evaluated on the phone from local catches, so badges work offline and are never revoked; the server stores only what was earned so badges follow the user across devices and friends can see a count. New badges appear in the catch celebration; a Badges screen shows progress toward every unearned one. Rarity uses GBIF US/CA report counts (rare under 20,000, vagrant under 2,000); those thresholds are guesses to tune with real users.
 
 ### Goals
 
@@ -377,8 +378,8 @@ Descriptions and photos on species pages (done). Sound playback on species pages
 **Phase 2 — Sound ID** (on-device inference done; live-mic testing on a phone pending)
 Runtime spike for Perch on mobile, then on-device classifier via a native module, spectrogram, likelihood prior from the region pack, catch from detection. Inference service for web and fallback.
 
-**Phase 3 — Badges**
-Rule engine, ~30 launch badges, celebration UI, badge showcase.
+**Phase 3 — Badges** (done)
+Rule engine, 49 launch badges, celebration UI, badge showcase. Still to do: badge notifications for friends' feeds.
 
 **Phase 3b — Accounts and sync** (done)
 Supabase project, email sign-in, local-first sync of catches. Prerequisite for badges shared across devices and for friends.
