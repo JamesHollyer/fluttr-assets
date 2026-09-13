@@ -60,6 +60,9 @@ The pitch in one line: *Merlin's identification, Pokémon's collecting, Strava's
 - Sign-in is **code first**: the email carries a 6-digit code in its subject and body, and the app asks for the code, with the magic link kept as a fallback. Codes work from any mail app; the link only worked from Chrome. This needs custom SMTP, since Supabase's built-in mailer (2 emails/hour) cannot send codes. For now mail goes out through the user's own Gmail with an app password; a branded sender such as accounts@fluttr.com waits until the project has a domain, which would also enable https app links.
 - **Badges shipped** (Phase 3). 49 badges in seven groups: life-list milestones (1 to 500 species), catch counts, repeat catches and big days, streaks, seasons and months, Sound ID and wizard skill tiers, family counts, a colors badge, ten bird-group badges (raptors, owls, warblers, sparrows, waterfowl, gulls, woodpeckers, hummingbirds, corvids, shorebirds, waders), moments (early bird, night owl, rare find, vagrant, introduced species), and friend counts. Rules are evaluated on the phone from local catches, so badges work offline and are never revoked; the server stores only what was earned so badges follow the user across devices and friends can see a count. New badges appear in the catch celebration; a Badges screen shows progress toward every unearned one. Rarity uses GBIF US/CA report counts (rare under 20,000, vagrant under 2,000); those thresholds are guesses to tune with real users.
 
+**2026-09-13**
+- **Friends feed** is its own tab (Species, Identify, Sound ID, Friends, Life list). It lists catches and badges from the user and accepted friends, newest first, with a Lifer flag when a catch was that person's first of the species; badges one person earns within half an hour collapse into a single row. A single **Congratulate** reaction per item; your own items show who cheered. The feed is read on demand through a `security definer` function (fan-out on read, not the `feed_items` table the doc proposed), which is simpler at this scale and still never exposes locations or notes. Friend management (search, requests) moved off the Life List and behind the tab's Manage link. Comments and push notifications remain open.
+
 ### Goals
 
 1. Identify birds by sound in near real time, and by a short series of questions.
@@ -384,8 +387,8 @@ Rule engine, 49 launch badges, celebration UI, badge showcase. Still to do: badg
 **Phase 3b — Accounts and sync** (done)
 Supabase project, email sign-in, local-first sync of catches. Prerequisite for badges shared across devices and for friends.
 
-**Phase 4 — Friends** (in progress)
-Friend requests and friends' life lists are done. Remaining: feed, congratulate, comments, notifications, privacy controls, sensitive species.
+**Phase 4 — Friends** (mostly done)
+Friend requests, friends' life lists, feed, and congratulate are done. Remaining: comments, notifications, per-catch privacy controls, sensitive species.
 
 **Phase 5 — Hardening & launch**
 Store submissions, PWA polish, analytics, moderation tooling, load test the inference path.
