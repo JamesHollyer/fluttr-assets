@@ -36,6 +36,11 @@ export default function AppTabs() {
         <NativeTabs.Trigger.Icon sf="waveform" md="graphic_eq" />
       </NativeTabs.Trigger>
 
+      <NativeTabs.Trigger name="friends">
+        <NativeTabs.Trigger.Label>Friends</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf={{ default: 'person.2', selected: 'person.2.fill' }} md="group" />
+      </NativeTabs.Trigger>
+
       <NativeTabs.Trigger name="life-list">
         <NativeTabs.Trigger.Label>Life list</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="checklist" md="checklist" />

@@ -123,7 +123,7 @@ export default function AccountScreen() {
               onPress={() => run(() => saveMyProfile(supabase!, userId!, username, displayName).then(() => setSavedUsername(username.trim().toLowerCase())), 'Profile saved.')}
             />
             {savedUsername ? (
-              <Button title="Friends" variant="secondary" onPress={() => router.push('/friends')} />
+              <Button title="Friends" variant="secondary" onPress={() => router.push('/friends/manage')} />
             ) : null}
           </View>
           <Button title="Sync now" variant="secondary" loading={sync.status === 'syncing'} onPress={() => sync.syncNow().catch(console.error)} />

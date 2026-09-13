@@ -50,7 +50,7 @@ export default function RootLayout() {
             <Stack.Screen name="catch/[code]" options={{ title: 'Catch', presentation: 'modal' }} />
             <Stack.Screen name="credits" options={{ title: 'Credits' }} />
             <Stack.Screen name="downloads" options={{ title: 'Downloads' }} />
-            <Stack.Screen name="friends/index" options={{ title: 'Friends' }} />
+            <Stack.Screen name="friends/manage" options={{ title: 'Friends' }} />
             <Stack.Screen name="friends/[id]" options={{ title: '', headerBackButtonDisplayMode: 'minimal' }} />
             <Stack.Screen name="account" options={{ title: 'Account' }} />
             <Stack.Screen name="auth-callback" options={{ headerShown: false }} />
