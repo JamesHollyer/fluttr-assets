@@ -3,6 +3,7 @@ import * as Linking from 'expo-linking';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 
+import { registerForPush, unregisterPush } from './notifications';
 import { supabase } from './supabase';
 
 type AuthState = {
@@ -101,8 +102,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (error) throw error;
   }, []);
 
+  // Register this device for push whenever someone is signed in.
+  useEffect(() => {
+    const client = supabase;
+    const userId = session?.user?.id;
+    if (!client || !userId) return;
+    registerForPush(client, userId).catch(() => {});
+  }, [session?.user?.id]);
+
   const signOut = useCallback(async () => {
     if (!supabase) return;
+    const current = (await supabase.auth.getUser()).data.user?.id;
+    if (current) await unregisterPush(supabase, current);
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   }, []);

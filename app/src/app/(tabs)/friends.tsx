@@ -14,6 +14,7 @@ import { useAuth } from '@/lib/auth';
 import { BADGE_BY_ID, checkBadges, recordFriendCount } from '@/lib/badges';
 import { fetchFeed, profileLabel, setCongratulated, timeAgo, type FeedItem } from '@/lib/feed';
 import { getMyProfile, listFriendships } from '@/lib/friends';
+import { unreadCount } from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
 
 type Row = FeedItem & { commonName: string | null; /** Other badges earned by the same person around the same time. */ alsoEarned: FeedItem[] };
@@ -51,15 +52,18 @@ export default function FriendsTab() {
   const [hasUsername, setHasUsername] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [unread, setUnread] = useState(0);
 
   const load = useCallback(async () => {
     const client = supabase;
     if (!client || !user) return;
-    const [profile, friends, feed] = await Promise.all([
+    const [profile, friends, feed, unreadN] = await Promise.all([
       getMyProfile(client, user.id),
       listFriendships(client, user.id),
       fetchFeed(client, user.id),
+      unreadCount(client).catch(() => 0),
     ]);
+    setUnread(unreadN);
     setHasUsername(Boolean(profile?.username));
     const accepted = friends.filter((f) => f.relation === 'friend').length;
     setFriendCount(accepted);
@@ -106,6 +110,14 @@ export default function FriendsTab() {
 
   const header = (
     <ScreenHeader title="Friends" subtitle={user ? 'What your flock has been catching' : undefined}>
+      {user ? (
+        <Pressable accessibilityRole="button" onPress={() => router.push('/activity')} style={styles.manageRow}>
+          <ThemedText type="small" themeColor="textSecondary" style={styles.manageText}>
+            {unread > 0 ? `${unread} new ${unread === 1 ? 'notification' : 'notifications'}` : 'Cheers, comments, and requests'}
+          </ThemedText>
+          <ThemedText type="smallBold" style={{ color: unread > 0 ? theme.highlight : theme.accent }}>Activity</ThemedText>
+        </Pressable>
+      ) : null}
       {user ? (
         <Pressable accessibilityRole="button" onPress={() => router.push('/friends/manage')} style={styles.manageRow}>
           <ThemedText type="small" themeColor="textSecondary" style={styles.manageText}>{manageLine}</ThemedText>

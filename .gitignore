@@ -3,3 +3,8 @@ tools/data/thumbs-src/
 .venv/
 tools/models/
 tools/.env
+
+# Firebase config (per-developer, never committed)
+app/google-services.json
+app/GoogleService-Info.plist
+supabase/.temp/

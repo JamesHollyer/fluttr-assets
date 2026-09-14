@@ -1,7 +1,8 @@
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import * as Notifications from 'expo-notifications';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useRouter } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { SQLiteProvider } from 'expo-sqlite';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { ActivityIndicator, useColorScheme } from 'react-native';
 
 import { SplashOverlay } from '@/components/splash-overlay';
@@ -9,9 +10,26 @@ import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { DATABASE_NAME, migrateDbIfNeeded } from '@/db/database';
 import { AuthProvider } from '@/lib/auth';
+import { routeForNotification, type NotificationData } from '@/lib/notifications';
 import { SyncProvider } from '@/lib/sync/use-sync';
 
 SplashScreen.preventAutoHideAsync();
+
+/** Sends a tapped notification to the right screen, including the tap that launched the app. */
+function NotificationRouter() {
+  const router = useRouter();
+  useEffect(() => {
+    const open = (response: Notifications.NotificationResponse | null) => {
+      if (!response) return;
+      const data = response.notification.request.content.data as NotificationData | undefined;
+      router.push(routeForNotification(data) as never);
+    };
+    Notifications.getLastNotificationResponseAsync().then(open).catch(() => {});
+    const sub = Notifications.addNotificationResponseReceivedListener(open);
+    return () => sub.remove();
+  }, [router]);
+  return null;
+}
 
 function Loading() {
   return (
@@ -43,6 +61,7 @@ export default function RootLayout() {
       <Suspense fallback={<Loading />}>
         <SQLiteProvider databaseName={DATABASE_NAME} onInit={migrateDbIfNeeded} useSuspense>
           <AuthProvider>
+            <NotificationRouter />
             <SyncProvider>
           <Stack>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

@@ -63,6 +63,7 @@ The pitch in one line: *Merlin's identification, Pokémon's collecting, Strava's
 **2026-09-13**
 - **Friends feed** is its own tab (Species, Identify, Sound ID, Friends, Life list). It lists catches and badges from the user and accepted friends, newest first, with a Lifer flag when a catch was that person's first of the species; badges one person earns within half an hour collapse into a single row. A single **Congratulate** reaction per item; your own items show who cheered. The feed is read on demand through a `security definer` function (fan-out on read, not the `feed_items` table the doc proposed), which is simpler at this scale and still never exposes locations or notes. Friend management (search, requests) moved off the Life List and behind the tab's Manage link. Push notifications remain open.
 - **Comments** on feed items, later the same day: a thread per catch or badge, visible to the item's owner and their accepted friends, deletable by the author or the owner (so people can moderate their own items). Feed rows show a comment count. Bodies are capped at 500 characters; no editing, no threading, no mentions.
+- **Notifications.** Server-side triggers write a row to `notifications` for congratulations, comments (to the item's owner and earlier commenters), friend requests, and acceptances. The app shows those rows in an **Activity** screen reached from the Friends tab, which also shows the unread count; opening Activity marks everything read. For push, each insert calls a `push` Edge Function through pg_net with a shared secret; the function delivers through **Firebase Cloud Messaging** (HTTP v1, signed with a service account held only as a function secret) and prunes dead tokens. Devices register their native FCM or APNs token on sign-in and remove it on sign-out. Push goes live once a Firebase project supplies `google-services.json`; iOS additionally needs an APNs key, so it waits for the Apple Developer Program. Expo's push service was skipped because it would add an EAS account for no gain. Per-kind preferences are not built yet.
 
 ### Goals
 
@@ -389,7 +390,7 @@ Rule engine, 49 launch badges, celebration UI, badge showcase. Still to do: badg
 Supabase project, email sign-in, local-first sync of catches. Prerequisite for badges shared across devices and for friends.
 
 **Phase 4 — Friends** (mostly done)
-Friend requests, friends' life lists, feed, congratulate, and comments are done. Remaining: notifications, per-catch privacy controls, sensitive species.
+Friend requests, friends' life lists, feed, congratulate, comments, and notifications (in-app now, push once Firebase is configured) are done. Remaining: notification preferences, per-catch privacy controls, sensitive species.
 
 **Phase 5 — Hardening & launch**
 Store submissions, PWA polish, analytics, moderation tooling, load test the inference path.

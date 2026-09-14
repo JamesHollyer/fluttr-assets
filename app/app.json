@@ -51,7 +51,15 @@
           ]
         }
       ],
-      "expo-audio"
+      "expo-audio",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#2F5F4E",
+          "defaultChannel": "social"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
