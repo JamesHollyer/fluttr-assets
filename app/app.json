@@ -18,7 +18,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.fluttr.app"
+      "package": "com.fluttr.app",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "static",
