@@ -193,6 +193,28 @@ export default function FriendsTab() {
                   {own && item.congratulatedBy.length ? ` · 🎉 ${item.congratulatedBy.join(', ')}` : ''}
                 </ThemedText>
               </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Comments"
+                onPress={() =>
+                  router.push({
+                    pathname: '/thread/[key]',
+                    params: {
+                      key: item.key,
+                      title: item.kind === 'catch' ? `${who} caught a ${item.commonName ?? ''}` : `${who} earned ${group.length > 1 ? `${group.length} badges` : (badge?.name ?? '')}`,
+                      when: item.happenedAt,
+                    },
+                  })
+                }
+                hitSlop={8}
+                style={[styles.cheer, { backgroundColor: theme.backgroundElement, borderColor: item.commentCount ? theme.accent : theme.border }]}>
+                <ThemedText style={styles.cheerGlyph}>💬</ThemedText>
+                {item.commentCount ? (
+                  <View style={[styles.count, { backgroundColor: theme.accent }]}>
+                    <ThemedText type="small" style={styles.countText}>{item.commentCount}</ThemedText>
+                  </View>
+                ) : null}
+              </Pressable>
               {!own ? (
                 <Pressable
                   accessibilityRole="button"
@@ -221,11 +243,13 @@ const styles = StyleSheet.create({
   manageRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.two, paddingVertical: Spacing.one },
   manageText: { flex: 1 },
   signIn: { padding: Spacing.four },
-  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three, paddingHorizontal: Spacing.four, paddingVertical: Spacing.three, borderBottomWidth: StyleSheet.hairlineWidth },
+  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingHorizontal: Spacing.four, paddingVertical: Spacing.three, borderBottomWidth: StyleSheet.hairlineWidth },
   glyphWrap: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
   glyph: { fontSize: 24, lineHeight: 30 },
   glyphSmall: { fontSize: 11, lineHeight: 14, textAlign: 'center', width: 40 },
   copy: { flex: 1, gap: 2 },
   cheer: { width: 40, height: 40, borderRadius: 20, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   cheerGlyph: { fontSize: 18, lineHeight: 22 },
+  count: { position: 'absolute', top: -6, right: -6, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center' },
+  countText: { color: '#FFFFFF', fontSize: 11, lineHeight: 14 },
 });

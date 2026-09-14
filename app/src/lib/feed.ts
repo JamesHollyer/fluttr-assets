@@ -16,9 +16,10 @@ export type FeedItem = {
   congratulated: boolean;
   /** Names of friends who congratulated it (only known for your own items). */
   congratulatedBy: string[];
+  commentCount: number;
 };
 
-type FeedRow = { kind: 'catch' | 'badge'; item_id: string; user_id: string; species_code: string | null; badge_id: string | null; happened_at: string; is_lifer: boolean };
+type FeedRow = { kind: 'catch' | 'badge'; item_id: string; user_id: string; species_code: string | null; badge_id: string | null; happened_at: string; is_lifer: boolean; comment_count: number | string };
 type ReactionRow = { item_kind: 'catch' | 'badge'; item_id: string; owner_id: string; from_user: string };
 
 export async function fetchFeed(supabase: SupabaseClient, me: string, limit = 100): Promise<FeedItem[]> {
@@ -62,6 +63,7 @@ export async function fetchFeed(supabase: SupabaseClient, me: string, limit = 10
       isLifer: Boolean(r.is_lifer),
       congratulated: mine.has(k),
       congratulatedBy: toMe.get(k) ?? [],
+      commentCount: Number(r.comment_count ?? 0),
     };
   });
 }
@@ -88,9 +90,41 @@ export function profileLabel(p: Profile): string {
 /** "just now", "5m", "3h", "2d", or a short date. */
 export function timeAgo(iso: string, now = Date.now()): string {
   const s = Math.max(0, (now - new Date(iso).getTime()) / 1000);
-  if (s < 60) return 'just now';
+  if (s < 60) return 'now';
   if (s < 3600) return `${Math.floor(s / 60)}m ago`;
   if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
   if (s < 7 * 86400) return `${Math.floor(s / 86400)}d ago`;
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+export type Comment = { id: string; authorId: string; author: Profile | null; body: string; createdAt: string };
+
+type CommentRow = { id: string; author_id: string; body: string; created_at: string };
+
+/** The comment thread on one feed item, oldest first, with author names. */
+export async function fetchComments(supabase: SupabaseClient, item: Pick<FeedItem, 'kind' | 'itemId' | 'userId'>): Promise<Comment[]> {
+  const { data, error } = await supabase
+    .from('comments')
+    .select('id, author_id, body, created_at')
+    .match({ item_kind: item.kind, item_id: item.itemId, owner_id: item.userId })
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  const rows = (data ?? []) as CommentRow[];
+  const ids = [...new Set(rows.map((r) => r.author_id))];
+  const profiles = ids.length ? await supabase.from('profiles').select('id, username, display_name').in('id', ids) : { data: [], error: null };
+  if (profiles.error) throw profiles.error;
+  const byId = new Map<string, Profile>((profiles.data ?? []).map((p) => [p.id, { id: p.id, username: p.username, displayName: p.display_name }]));
+  return rows.map((r) => ({ id: r.id, authorId: r.author_id, author: byId.get(r.author_id) ?? null, body: r.body, createdAt: r.created_at }));
+}
+
+export async function addComment(supabase: SupabaseClient, me: string, item: Pick<FeedItem, 'kind' | 'itemId' | 'userId'>, body: string): Promise<void> {
+  const text = body.trim();
+  if (!text) return;
+  const { error } = await supabase.from('comments').insert({ item_kind: item.kind, item_id: item.itemId, owner_id: item.userId, author_id: me, body: text.slice(0, 500) });
+  if (error) throw error;
+}
+
+export async function deleteComment(supabase: SupabaseClient, id: string): Promise<void> {
+  const { error } = await supabase.from('comments').delete().eq('id', id);
+  if (error) throw error;
 }
