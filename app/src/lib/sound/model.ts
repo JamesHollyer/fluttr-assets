@@ -11,13 +11,22 @@ export const MODEL_PATH = `${MODEL_DIR}${MODEL_NAME}`;
 
 /**
  * Where to fetch the model. Until download packs exist this is a plain file URL.
- * In development it defaults to the machine running Metro, which serves the
- * tools/models folder on port 8090 (see tools/README.md).
+ * Set EXPO_PUBLIC_MODEL_URL to override (for example a Metro-host copy in development).
  */
+/**
+ * Public home of the model: a GitHub release asset served from GitHub's CDN.
+ * Bump the tag when the model file changes so old installs keep a matching URL.
+ */
+export const MODEL_RELEASE_URL = `https://github.com/JamesHollyer/fluttr-assets/releases/download/model-perch-v2-int8-1/${MODEL_NAME}`;
+
 export function modelUrl(): string {
   const configured = process.env.EXPO_PUBLIC_MODEL_URL;
   if (configured) return configured;
-  // Expo Go exposes the Metro host in the config; a development build has to ask React Native.
+  return MODEL_RELEASE_URL;
+}
+
+/** During development, a copy served from the Metro host is faster than the CDN. */
+export function devModelUrl(): string | null {
   let host = Constants.expoConfig?.hostUri?.split(':')[0];
   if (!host && __DEV__) {
     try {
@@ -29,7 +38,7 @@ export function modelUrl(): string {
       host = undefined;
     }
   }
-  return host ? `http://${host}:8090/${MODEL_NAME}` : '';
+  return host ? `http://${host}:8090/${MODEL_NAME}` : null;
 }
 
 export async function isModelInstalled(): Promise<boolean> {
