@@ -9,7 +9,13 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/images/icon.png",
-      "bundleIdentifier": "com.fluttr.app"
+      "bundleIdentifier": "com.fluttr.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "appleTeamId": "VQ238Q6X89"
     },
     "android": {
       "adaptiveIcon": {
