@@ -18,7 +18,7 @@ def env_token() -> str:
             return line.split("=", 1)[1].strip().strip('"')
     sys.exit("GITHUB_TOKEN missing from tools/.env")
 
-def call(token: str, method: str, url: str, body=None, data: bytes | None = None, content_type="application/json"):
+def call(token: str, method: str, url: str, body=None, data=None, content_type="application/json"):
     req = urllib.request.Request(url, method=method, data=data if data is not None else (json.dumps(body).encode() if body else None),
         headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json", "Content-Type": content_type, "User-Agent": "fluttr-publish"})
     try:
