@@ -21,7 +21,7 @@ xcodebuild -exportArchive -archivePath /tmp/Fluttr.xcarchive -exportOptionsPlist
   -exportPath /tmp/Fluttr-export -authenticationKeyPath ... -authenticationKeyID ... -authenticationKeyIssuerID ...
 ```
 
-`ExportOptions.plist`: method `app-store-connect`, destination `upload`, signingStyle `manual`,
+`ExportOptions.plist` (kept at `app/build-config/`, copy into `ios/` after prebuild since `ios/` is generated and ignored): method `app-store-connect`, destination `upload`, signingStyle `manual`,
 signingCertificate `iPhone Distribution`, provisioningProfiles `{ com.fluttr.app: "Fluttr App Store" }`,
 manageAppVersionAndBuildNumber true (App Store Connect bumps the build number).
 
