@@ -155,7 +155,8 @@ export default function AccountScreen() {
                         if (!client || !id) return;
                         run(async () => {
                           await deleteAccount(client, db, id);
-                          router.back();
+                          if (router.canGoBack()) router.back();
+                          else router.replace('/');
                         });
                       },
                     },
