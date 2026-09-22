@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { useSQLiteContext } from 'expo-sqlite';
+import { Alert, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { deleteAccount } from '@/lib/account';
 import { useAuth } from '@/lib/auth';
 import { getMyProfile, saveMyProfile } from '@/lib/friends';
 import { supabase } from '@/lib/supabase';
@@ -17,6 +19,7 @@ export default function AccountScreen() {
   const theme = useTheme();
   const router = useRouter();
   const auth = useAuth();
+  const db = useSQLiteContext();
   const sync = useSync();
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -128,6 +131,39 @@ export default function AccountScreen() {
           </View>
           <Button title="Sync now" variant="secondary" loading={sync.status === 'syncing'} onPress={() => sync.syncNow().catch(console.error)} />
           <Button title="Sign out" variant="destructive" onPress={() => run(auth.signOut)} />
+          <View style={[styles.card, styles.dangerCard, { borderColor: theme.danger }]}>
+            <ThemedText type="smallBold">Delete account</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              Permanently removes your account, catches, badges, friends, and comments from Fluttr. This cannot be undone.
+            </ThemedText>
+            <Button
+              title="Delete my account"
+              variant="destructive"
+              loading={busy}
+              onPress={() =>
+                Alert.alert(
+                  'Delete your account?',
+                  'Your catches, badges, friendships, cheers, and comments will be permanently deleted. There is no way to get them back.',
+                  [
+                    { text: 'Keep my account', style: 'cancel' },
+                    {
+                      text: 'Delete everything',
+                      style: 'destructive',
+                      onPress: () => {
+                        const client = supabase;
+                        const id = auth.user?.id;
+                        if (!client || !id) return;
+                        run(async () => {
+                          await deleteAccount(client, db, id);
+                          router.back();
+                        });
+                      },
+                    },
+                  ],
+                )
+              }
+            />
+          </View>
           {message ? <ThemedText type="small" style={{ color: theme.danger }}>{message}</ThemedText> : null}
         </ScrollView>
       </ThemedView>
@@ -207,5 +243,6 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { alignSelf: 'center', width: '100%', maxWidth: MaxContentWidth, padding: Spacing.four, gap: Spacing.three },
   card: { padding: Spacing.three, borderRadius: Spacing.three, gap: Spacing.one },
+  dangerCard: { borderWidth: StyleSheet.hairlineWidth, marginTop: Spacing.four },
   input: { fontSize: 18, paddingVertical: Spacing.three - 2, paddingHorizontal: Spacing.three, borderRadius: Spacing.three, borderWidth: StyleSheet.hairlineWidth },
 });
