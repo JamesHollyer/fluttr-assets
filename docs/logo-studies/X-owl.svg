@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" style="color:#2F5F4E">
-<title>Fluttr mark X: Owl</title>
-<path d="M18 34 L24 8 L40 24 Q50 20 60 24 L76 8 L82 34 Z" fill="currentColor"/>
-<circle cx="50" cy="54" r="34" fill="currentColor"/>
-<g fill="none" stroke="#FFFFFF" stroke-width="6"><circle cx="35" cy="52" r="13"/><circle cx="65" cy="52" r="13"/></g>
-<rect x="44" y="48" width="12" height="8" rx="2" fill="#FFFFFF"/>
-<circle cx="35" cy="52" r="4.5" fill="#FFFFFF"/><circle cx="65" cy="52" r="4.5" fill="#FFFFFF"/>
-<path d="M44 70 L56 70 L50 80 Z" fill="#D9A400"/>
-</svg>
