@@ -1,0 +1,30 @@
+:root { --bg: #FFFFFF; --ink: #1B241C; --muted: #5E6A60; --line: #D6DED7; --accent: #2F5F4E; --gold: #D9A400; --soft: #F2F5F0; }
+@media (prefers-color-scheme: dark) { :root { --bg: #0F1512; --ink: #E6EBE3; --muted: #A6B1A8; --line: #2A342C; --accent: #8FC7B1; --soft: #171E19; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+header { display: flex; align-items: center; gap: 12px; padding: 20px 24px; max-width: 760px; margin: 0 auto; }
+header img { width: 40px; height: 40px; border-radius: 10px; }
+header a { color: var(--ink); text-decoration: none; font-weight: 700; font-size: 20px; }
+header nav { margin-left: auto; display: flex; gap: 18px; }
+header nav a { font-weight: 500; font-size: 15px; color: var(--muted); }
+main { max-width: 760px; margin: 0 auto; padding: 8px 24px 64px; }
+h1 { font-size: 34px; line-height: 1.2; margin: 24px 0 8px; letter-spacing: -0.01em; }
+h2 { font-size: 22px; margin: 36px 0 8px; }
+p, li { max-width: 65ch; }
+.lede { color: var(--muted); font-size: 19px; }
+.hero { display: grid; grid-template-columns: 120px 1fr; gap: 24px; align-items: center; margin: 24px 0; }
+.hero img { width: 120px; height: 120px; border-radius: 28px; }
+@media (max-width: 520px) { .hero { grid-template-columns: 1fr; justify-items: start; } }
+.stores { display: flex; flex-wrap: wrap; gap: 12px; margin: 20px 0; }
+.stores a { display: inline-block; padding: 12px 18px; border-radius: 12px; background: var(--accent); color: #fff; text-decoration: none; font-weight: 600; }
+.stores a.soon { background: var(--soft); color: var(--muted); }
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 28px 0; padding: 0; list-style: none; }
+.features li { background: var(--soft); border-radius: 14px; padding: 16px; }
+.features strong { display: block; margin-bottom: 4px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0 20px; font-size: 15px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+footer { max-width: 760px; margin: 0 auto; padding: 24px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+footer a { color: var(--muted); }
+.updated { color: var(--muted); font-size: 15px; }
+a { color: var(--accent); }
